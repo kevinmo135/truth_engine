@@ -1,4 +1,4 @@
-name: Deploy to Railway
+name: Test and Build
 
 on:
   push:
@@ -7,38 +7,6 @@ on:
     branches: [ main ]
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
-    - name: Install Railway CLI
-      run: npm install -g @railway/cli
-      
-    - name: Deploy to Railway
-      run: |
-        # Initialize Railway project (creates new project if none exists)
-        railway init --name truth-engine || echo "Project already exists or init failed, continuing..."
-        
-        # Deploy the application
-        railway up --detach
-        
-        # Set environment variables
-        railway variables set OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
-        railway variables set CONGRESS_API_KEY="${{ secrets.CONGRESS_API_KEY }}"
-        railway variables set PYTHONUNBUFFERED="1"
-        railway variables set PORT="8000"
-        
-      env:
-        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        
   test:
     runs-on: ubuntu-latest
     
@@ -65,4 +33,16 @@ jobs:
       run: python -m pytest test_analyzer.py -v
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }} 
+        CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+        
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Test Docker Build
+      run: |
+        docker build -t truth-engine .
+        echo "✅ Docker build successful!" 
