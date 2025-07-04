@@ -126,3 +126,9 @@ async def get_bills_api():
             return json.load(f)
     else:
         return {"error": "No data available"}
+
+
+@app.get("/health")
+async def health_check():
+    """Simple health check endpoint"""
+    return {"status": "healthy", "service": "truth-engine"}

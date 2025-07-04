@@ -100,13 +100,24 @@ def start_web_server(with_scheduler=True):
     print(f"🔧 Debug - PORT: {os.getenv('PORT', '8000')}")
 
     if with_scheduler:
-        # Start scheduler in background thread
-        print("🕐 Starting daily refresh scheduler in background...")
-        scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-        scheduler_thread.start()
+        try:
+            # Start scheduler in background thread
+            print("🕐 Starting daily refresh scheduler in background...")
+            scheduler_thread = threading.Thread(
+                target=run_scheduler, daemon=True)
+            scheduler_thread.start()
+            print("✅ Scheduler started successfully")
+        except Exception as e:
+            print(f"⚠️ Warning: Could not start scheduler: {e}")
+            print("🌐 Continuing with web server only...")
 
     # Start web server
-    uvicorn.run("webapp.main:app", host="0.0.0.0", port=8000, reload=False)
+    print("🚀 Starting web server on port 8000...")
+    try:
+        uvicorn.run("webapp.main:app", host="0.0.0.0", port=8000, reload=False)
+    except Exception as e:
+        print(f"❌ Failed to start web server: {e}")
+        raise
 
 
 if __name__ == "__main__":
