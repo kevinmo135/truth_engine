@@ -23,16 +23,19 @@ jobs:
       run: npm install -g @railway/cli
       
     - name: Deploy to Railway
-      run: railway up --service=${{ secrets.RAILWAY_SERVICE_NAME || 'truth-engine' }}
-      env:
-        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
-        
-    - name: Set Railway Environment Variables
       run: |
-        railway variables set OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" --service=${{ secrets.RAILWAY_SERVICE_NAME || 'truth-engine' }}
-        railway variables set CONGRESS_API_KEY="${{ secrets.CONGRESS_API_KEY }}" --service=${{ secrets.RAILWAY_SERVICE_NAME || 'truth-engine' }}
+        # Login to Railway
+        railway login --token ${{ secrets.RAILWAY_TOKEN }}
+        
+        # Deploy (this will create project if it doesn't exist)
+        railway up --detach
+        
+        # Set environment variables
+        railway variables set OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+        railway variables set CONGRESS_API_KEY="${{ secrets.CONGRESS_API_KEY }}"
+        railway variables set PYTHONUNBUFFERED="1"
+        railway variables set PORT="8000"
+        
       env:
         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         
