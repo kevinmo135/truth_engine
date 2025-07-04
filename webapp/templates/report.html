@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Daily Truth Digest</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 2rem; }
+        pre { white-space: pre-wrap; background: #f9f9f9; padding: 1rem; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Daily Truth Digest</h1>
+    {% if content %}
+    <pre>{{ content }}</pre>
+    {% else %}
+    <p><em>No report available yet. Please check back after the truth engine runs.</em></p>
+    {% endif %}
+</body>
+</html>
