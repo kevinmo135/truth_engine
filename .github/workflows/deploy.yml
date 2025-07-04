@@ -24,10 +24,7 @@ jobs:
       
     - name: Deploy to Railway
       run: |
-        # Login to Railway
-        railway login --token ${{ secrets.RAILWAY_TOKEN }}
-        
-        # Deploy (this will create project if it doesn't exist)
+        # Deploy (Railway CLI will use RAILWAY_TOKEN from environment)
         railway up --detach
         
         # Set environment variables
