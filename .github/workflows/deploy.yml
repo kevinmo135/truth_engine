@@ -24,7 +24,10 @@ jobs:
       
     - name: Deploy to Railway
       run: |
-        # Deploy (Railway CLI will use RAILWAY_TOKEN from environment)
+        # Initialize Railway project (creates new project if none exists)
+        railway init --name truth-engine || echo "Project already exists or init failed, continuing..."
+        
+        # Deploy the application
         railway up --detach
         
         # Set environment variables
