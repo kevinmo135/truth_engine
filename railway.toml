@@ -1,0 +1,15 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python main.py --web"
+healthcheckPath = "/"
+healthcheckTimeout = 30
+restartPolicyType = "always"
+
+[env]
+PYTHONUNBUFFERED = "1"
+PORT = "8000"
+
+[[services]]
+name = "truth-engine" 
