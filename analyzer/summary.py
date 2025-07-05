@@ -5,101 +5,105 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Initialize OpenAI client with error handling
+
+
+def get_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "OPENAI_API_KEY environment variable is required but not set. Please add it to your environment variables.")
+    return OpenAI(api_key=api_key)
 
 
 def summarize_bill(title, summary, sponsor):
+    """
+    Generate a structured analysis of a bill using GPT-4.
+    """
+    try:
+        client = get_openai_client()
+    except ValueError as e:
+        return f"Configuration Error: {str(e)}"
+
     prompt = f"""
-You are an expert civic policy analyst. Analyze the following legislation with depth and nuance. Provide clear, accessible insights that help citizens understand the real-world implications.
+    Analyze this legislation and provide a structured response in the following format:
 
-Bill Title: {title}
-Summary: {summary}
-Sponsor: {sponsor}
+    **PLAIN ENGLISH SUMMARY:**
+    [Write a clear, jargon-free explanation that any citizen can understand]
 
-Please provide a comprehensive analysis in the following format:
+    **WHO THIS HELPS:**
+    [List specific groups, demographics, or stakeholders who would benefit]
 
-**Plain English Summary:**
-[2-3 sentences explaining what this bill actually does in simple terms]
+    **WHO THIS COULD HURT:**
+    [List potential negative impacts on specific groups or interests]
 
-**Who This Helps:**
-[Specific groups, communities, or industries that would benefit]
+    **SHORT-TERM IMPACT (1-2 years):**
+    [Immediate effects if this becomes law]
 
-**Who This Could Hurt:**
-[Specific groups that might face negative impacts or increased costs]
+    **LONG-TERM IMPACT (5+ years):**
+    [Long-range consequences and implications]
 
-**Short-Term Impact (1-2 years):**
-[Immediate effects if this bill passes]
+    **KEY CONTROVERSIES:**
+    [Main points of debate and opposition arguments]
 
-**Long-Term Impact (5+ years):**
-[Broader societal and economic implications]
+    **COST/SAVINGS:**
+    [Financial impact - spending, savings, or revenue effects]
 
-**Key Controversies:**
-[Main points of debate or opposition this bill might face]
-
-**Estimated Cost/Savings:**
-[If mentioned in summary, or note if unclear]
-"""
+    BILL DETAILS:
+    Title: {title}
+    Sponsor: {sponsor}
+    Summary: {summary}
+    """
 
     try:
         response = client.chat.completions.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o"),
+            model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are an expert policy analyst who explains complex legislation in clear, accessible language. Focus on real-world impacts and be objective about both benefits and drawbacks."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=800,
-            temperature=0.3
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        print(f"❌ OpenAI API error: {e}")
-        return "Error: Unable to generate summary"
-
-
-def get_detailed_analysis(title, summary, sponsor, user_question=""):
-    """
-    Generate a detailed, interactive analysis for the web interface
-    """
-    base_prompt = f"""
-Bill Title: {title}
-Summary: {summary}
-Sponsor: {sponsor}
-"""
-
-    if user_question:
-        prompt = f"""
-{base_prompt}
-
-User Question: {user_question}
-
-As an expert policy analyst, answer the user's specific question about this bill. Provide detailed, factual information while maintaining objectivity. Include relevant context and implications.
-"""
-    else:
-        prompt = f"""
-{base_prompt}
-
-Provide a comprehensive analysis of this legislation including:
-- Detailed explanation of mechanisms and implementation
-- Stakeholder analysis (winners/losers)
-- Economic implications and budget impact
-- Timeline for implementation
-- Potential legal challenges
-- Comparison to similar past legislation
-- Public opinion considerations
-
-Be thorough but accessible to educated citizens.
-"""
-
-    try:
-        response = client.chat.completions.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o"),
-            messages=[
-                {"role": "system", "content": "You are a senior policy analyst providing detailed, nuanced analysis of legislation. Be comprehensive, objective, and educational."},
+                {"role": "system", "content": "You are a nonpartisan policy analyst who explains legislation clearly and objectively to help citizens understand government actions."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=1500,
-            temperature=0.2
+            temperature=0.7
         )
+
         return response.choices[0].message.content
+
     except Exception as e:
-        return f"Error generating detailed analysis: {e}"
+        return f"Analysis Error: Unable to generate analysis. {str(e)}"
+
+
+def get_detailed_analysis(bill_title, bill_summary, question):
+    """
+    Answer specific questions about a bill using GPT-4.
+    """
+    try:
+        client = get_openai_client()
+    except ValueError as e:
+        return f"Configuration Error: {str(e)}"
+
+    prompt = f"""
+    You are answering questions about this legislation:
+
+    Bill: {bill_title}
+    Summary: {bill_summary}
+
+    User Question: {question}
+
+    Provide a detailed, factual answer based on the bill information. Be specific and cite relevant aspects of the legislation.
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a helpful policy analyst who answers questions about legislation clearly and accurately."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=800,
+            temperature=0.7
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"Error: Unable to generate response. {str(e)}"
