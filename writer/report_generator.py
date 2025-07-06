@@ -57,37 +57,38 @@ def parse_gpt4_analysis(content):
 
     for line in lines:
         line = line.strip()
-        if '**Plain English Summary:**' in line:
+        line_upper = line.upper()
+        if '**PLAIN ENGLISH SUMMARY:**' in line_upper:
             if current_section:
                 sections[current_section] = '\n'.join(current_content).strip()
             current_section = 'plain_summary'
             current_content = []
-        elif '**Who This Helps:**' in line:
+        elif '**WHO THIS HELPS:**' in line_upper:
             if current_section:
                 sections[current_section] = '\n'.join(current_content).strip()
             current_section = 'who_helps'
             current_content = []
-        elif '**Who This Could Hurt:**' in line:
+        elif '**WHO THIS COULD HURT:**' in line_upper:
             if current_section:
                 sections[current_section] = '\n'.join(current_content).strip()
             current_section = 'who_hurts'
             current_content = []
-        elif '**Short-Term Impact' in line:
+        elif '**SHORT-TERM IMPACT' in line_upper:
             if current_section:
                 sections[current_section] = '\n'.join(current_content).strip()
             current_section = 'short_term'
             current_content = []
-        elif '**Long-Term Impact' in line:
+        elif '**LONG-TERM IMPACT' in line_upper:
             if current_section:
                 sections[current_section] = '\n'.join(current_content).strip()
             current_section = 'long_term'
             current_content = []
-        elif '**Key Controversies:**' in line:
+        elif '**KEY CONTROVERSIES:**' in line_upper:
             if current_section:
                 sections[current_section] = '\n'.join(current_content).strip()
             current_section = 'controversies'
             current_content = []
-        elif '**Estimated Cost/Savings:**' in line:
+        elif '**COST/SAVINGS:**' in line_upper or '**ESTIMATED COST/SAVINGS:**' in line_upper:
             if current_section:
                 sections[current_section] = '\n'.join(current_content).strip()
             current_section = 'cost_savings'

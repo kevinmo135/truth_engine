@@ -1,5 +1,5 @@
-from fetcher.federal_congress_gov import fetch_recent_federal_bills
-from fetcher.florida import fetch_recent_florida_bills
+from fetcher.congress_api import fetch_recent_federal_bills
+from fetcher.florida_scraper import fetch_recent_florida_bills
 from analyzer.summary import summarize_bill
 from writer.report_generator import create_digest, parse_gpt4_analysis
 from notifier.email import send_email_report

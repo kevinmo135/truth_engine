@@ -1,10 +1,10 @@
+fastapi
+uvicorn
 openai>=1.0.0
 requests
-fastapi
-jinja2
 python-dotenv
-beautifulsoup4
-uvicorn
 python-multipart
-pytest
 schedule
+pytest
+beautifulsoup4
+jinja2
