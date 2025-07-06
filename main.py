@@ -50,8 +50,11 @@ def generate_and_send_digest():
         print(
             f"🔍 Analyzing bill {i+1}/{len(all_bills)}: {bill_id} - {bill['title'][:50]}...")
 
+        # Get bill status for proper caching
+        bill_status = bill.get('status', 'Active').lower()
+
         analysis_content = summarize_bill(
-            bill["title"], bill["summary"], bill["sponsor"], bill_id)
+            bill["title"], bill["summary"], bill["sponsor"], bill_id, bill_status)
         parsed_analysis = parse_gpt4_analysis(analysis_content)
 
         report = {
@@ -166,6 +169,8 @@ if __name__ == "__main__":
                         help="Show cache statistics")
     parser.add_argument("--clear-cache", action="store_true",
                         help="Clear analysis cache")
+    parser.add_argument("--cleanup", action="store_true",
+                        help="Clean up old bills (older than 1 month)")
     args = parser.parse_args()
 
     if args.cache_stats:
@@ -174,6 +179,10 @@ if __name__ == "__main__":
         cache = get_cache()
         cache.clear_cache()
         print("🗑️ Cache cleared successfully")
+    elif args.cleanup:
+        cache = get_cache()
+        cleaned_count = cache.cleanup_old_bills()
+        print(f"🗑️ Cleaned up {cleaned_count} old bills")
     elif args.run:
         generate_and_send_digest()
     elif args.scheduler:

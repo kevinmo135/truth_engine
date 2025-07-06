@@ -516,19 +516,19 @@
         </div>
       </div>
 
-      {% if bill.parsed.who_helps or bill.parsed.who_hurts %}
+      {% if bill.parsed.benefits or bill.parsed.drawbacks %}
       <div class="impact-grid">
-        {% if bill.parsed.who_helps %}
+        {% if bill.parsed.benefits %}
         <div class="impact-card impact-helps">
-          <h3><i class="fas fa-thumbs-up"></i> Who This Helps</h3>
-          <p>{{ bill.parsed.who_helps }}</p>
+          <h3><i class="fas fa-thumbs-up"></i> Benefits</h3>
+          <p>{{ bill.parsed.benefits }}</p>
         </div>
         {% endif %}
 
-        {% if bill.parsed.who_hurts %}
+        {% if bill.parsed.drawbacks %}
         <div class="impact-card impact-hurts">
-          <h3><i class="fas fa-exclamation-triangle"></i> Who This Could Hurt</h3>
-          <p>{{ bill.parsed.who_hurts }}</p>
+          <h3><i class="fas fa-exclamation-triangle"></i> Drawbacks</h3>
+          <p>{{ bill.parsed.drawbacks }}</p>
         </div>
         {% endif %}
       </div>

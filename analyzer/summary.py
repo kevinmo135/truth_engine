@@ -17,7 +17,7 @@ def get_openai_client():
     return OpenAI(api_key=api_key)
 
 
-def summarize_bill(title, summary, sponsor, bill_id=None):
+def summarize_bill(title, summary, sponsor, bill_id=None, status="active"):
     """
     Generate a structured analysis of a bill using GPT-4.
     Uses caching to avoid re-analyzing the same bills.
@@ -48,11 +48,11 @@ def summarize_bill(title, summary, sponsor, bill_id=None):
     **PLAIN ENGLISH SUMMARY:**
     [Write a clear, jargon-free explanation that any citizen can understand]
 
-    **WHO THIS HELPS:**
-    [List specific groups, demographics, or stakeholders who would benefit]
+    **BENEFITS:**
+    [List the main advantages and positive outcomes of this legislation]
 
-    **WHO THIS COULD HURT:**
-    [List potential negative impacts on specific groups or interests]
+    **DRAWBACKS:**
+    [List the main disadvantages and potential negative consequences]
 
     **SHORT-TERM IMPACT (1-2 years):**
     [Immediate effects if this becomes law]
@@ -85,8 +85,9 @@ def summarize_bill(title, summary, sponsor, bill_id=None):
 
         analysis_result = response.choices[0].message.content
 
-        # Cache the result for future use
-        cache.cache_analysis(bill_id, title, summary, sponsor, analysis_result)
+        # Cache the result for future use with status tracking
+        cache.cache_bill_analysis(
+            bill_id, title, summary, analysis_result, status)
 
         return analysis_result
 
@@ -144,9 +145,9 @@ def get_detailed_analysis(bill_title, bill_summary, question, bill_id=None):
 
         analysis_result = response.choices[0].message.content
 
-        # Cache the result for future use
-        cache.cache_analysis(question_key, bill_title, f"{bill_summary}|Q:{question}",
-                             "User Question", analysis_result)
+        # Cache the result for future use with status tracking
+        cache.cache_bill_analysis(question_key, bill_title, f"{bill_summary}|Q:{question}",
+                                  analysis_result, "active")
 
         return analysis_result
 

@@ -4,6 +4,16 @@ from datetime import datetime
 
 
 def create_digest(reports, path="data/latest_digest.md"):
+    from analyzer.cache_manager import get_cache
+
+    # Get cache instance for status grouping and cleanup
+    cache = get_cache()
+
+    # Clean up old bills (older than 1 month)
+    cleaned_count = cache.cleanup_old_bills()
+    if cleaned_count > 0:
+        print(f"🗑️ Cleaned up {cleaned_count} old bills from cache")
+
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     content = f"# Daily Truth Digest\nGenerated: {now}\n\n"
 
@@ -23,10 +33,23 @@ def create_digest(reports, path="data/latest_digest.md"):
     with open(path, "w") as f:
         f.write(content)
 
-    # Also create a JSON file for the web interface
+    # Get bills grouped by status for web interface
+    status_groups = cache.get_bills_by_status()
+
+    # Also create a JSON file for the web interface with status grouping
     json_data = {
         "generated_at": now,
-        "reports": reports
+        "reports": reports,
+        "status_groups": status_groups,
+        "summary_stats": {
+            "total_bills": len(reports),
+            "active_bills": len(status_groups.get('active', [])),
+            "passed_bills": len(status_groups.get('passed', [])),
+            "failed_bills": len(status_groups.get('failed', [])),
+            "vetoed_bills": len(status_groups.get('vetoed', [])),
+            "withdrawn_bills": len(status_groups.get('withdrawn', [])),
+            "cleaned_up_bills": cleaned_count
+        }
     }
 
     json_path = path.replace(".md", ".json")
@@ -35,6 +58,8 @@ def create_digest(reports, path="data/latest_digest.md"):
 
     print(f"Digest saved to {path}")
     print(f"JSON data saved to {json_path}")
+    print(
+        f"📊 Status summary: {json_data['summary_stats']['active_bills']} active, {json_data['summary_stats']['passed_bills']} passed, {json_data['summary_stats']['failed_bills']} failed")
 
 
 def parse_gpt4_analysis(content):
@@ -43,8 +68,8 @@ def parse_gpt4_analysis(content):
     """
     sections = {
         'plain_summary': '',
-        'who_helps': '',
-        'who_hurts': '',
+        'benefits': '',
+        'drawbacks': '',
         'short_term': '',
         'long_term': '',
         'controversies': '',
@@ -63,15 +88,15 @@ def parse_gpt4_analysis(content):
                 sections[current_section] = '\n'.join(current_content).strip()
             current_section = 'plain_summary'
             current_content = []
-        elif '**WHO THIS HELPS:**' in line_upper:
+        elif '**BENEFITS:**' in line_upper:
             if current_section:
                 sections[current_section] = '\n'.join(current_content).strip()
-            current_section = 'who_helps'
+            current_section = 'benefits'
             current_content = []
-        elif '**WHO THIS COULD HURT:**' in line_upper:
+        elif '**DRAWBACKS:**' in line_upper:
             if current_section:
                 sections[current_section] = '\n'.join(current_content).strip()
-            current_section = 'who_hurts'
+            current_section = 'drawbacks'
             current_content = []
         elif '**SHORT-TERM IMPACT' in line_upper:
             if current_section:

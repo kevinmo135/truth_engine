@@ -684,6 +684,98 @@
         font-size: 1.5rem;
       }
     }
+
+    /* Status Section Styles for Collapsible Groups */
+    .status-section {
+      margin: 2rem 0;
+      border-radius: 15px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(30, 144, 255, 0.2);
+    }
+
+    .section-header {
+      background: linear-gradient(135deg, rgba(30, 144, 255, 0.1) 0%, rgba(70, 130, 180, 0.1) 100%);
+      padding: 1.5rem 2rem;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(30, 144, 255, 0.2);
+      transition: all 0.3s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-header:hover {
+      background: linear-gradient(135deg, rgba(30, 144, 255, 0.15) 0%, rgba(70, 130, 180, 0.15) 100%);
+    }
+
+    .section-header h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      margin: 0;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-header.active-header h3 i {
+      color: #22c55e;
+    }
+
+    .section-header.passed-header h3 i {
+      color: #1E90FF;
+    }
+
+    .section-header.failed-header h3 i {
+      color: #ef4444;
+    }
+
+    .bill-count {
+      font-weight: normal;
+      color: #64748b;
+      font-size: 1rem;
+    }
+
+    .toggle-icon {
+      font-size: 1.2rem;
+      color: #64748b;
+      transition: transform 0.3s ease;
+    }
+
+    .section-header.collapsed .toggle-icon {
+      transform: rotate(-90deg);
+    }
+
+    .section-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+      padding: 0 2rem;
+    }
+
+    .section-content.active {
+      max-height: none;
+      padding: 0;
+    }
+
+    .no-bills {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: #64748b;
+    }
+
+    .no-bills i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #cbd5e1;
+    }
+
+    .no-bills p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
   </style>
 </head>
 
@@ -720,197 +812,355 @@
 
       <!-- Federal Bills Tab -->
       <div id="federal-tab" class="tab-content active">
-        <div class="bills-container">
-          {% for bill in reports %}
-          {% if bill.get('source', '').lower() == 'federal' or 'congress' in bill.get('source', '').lower() %}
-          <div class="bill-frame">
-            <div class="bill-header">
-              <div class="bill-type-badge">
-                <i class="fas fa-flag-usa"></i> Federal
-              </div>
-              <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
-              <h2 class="bill-title">{{ bill.title }}</h2>
-              <p class="bill-sponsor">
-                <i class="fas fa-user-tie"></i>
-                Sponsored by {{ bill.sponsor }}
-              </p>
-            </div>
 
-            <div class="bill-content">
-              <div class="bill-summary">
-                {{ bill.parsed.plain_summary if bill.parsed.plain_summary else bill.original_summary[:400] + '...' }}
-              </div>
+        <!-- Federal Bills Section (No Status Grouping) -->
+        <div class="status-section">
+          <div class="section-header active-header" onclick="toggleSection('federal-all')">
+            <h3>
+              <i class="fas fa-flag-usa"></i>
+              Recent Federal Legislation
+              <span class="bill-count">({{ (active_federal + passed_federal + failed_federal)|length }})</span>
+            </h3>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+          </div>
+          <div id="federal-all" class="section-content active">
+            <div class="bills-container">
+              {% for bill in active_federal + passed_federal + failed_federal %}
+              <div class="bill-frame">
+                <div class="bill-header">
+                  <div class="bill-type-badge">
+                    <i class="fas fa-flag-usa"></i> Federal
+                  </div>
+                  <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
+                  <h2 class="bill-title">{{ bill.title }}</h2>
+                  <p class="bill-sponsor">
+                    <i class="fas fa-user-tie"></i>
+                    Sponsored by {{ bill.sponsor }}
+                  </p>
+                </div>
 
-              {% if bill.parsed.who_helps or bill.parsed.who_hurts %}
-              <div class="impact-section">
-                <div class="impact-grid">
-                  {% if bill.parsed.who_helps %}
-                  <div class="impact-card impact-helps">
-                    <h4><i class="fas fa-thumbs-up"></i> Who Benefits</h4>
-                    <ul class="impact-list">
-                      {% for point in bill.parsed.who_helps.split('.') if point.strip() %}
-                      <li>{{ point.strip() }}</li>
-                      {% endfor %}
+                <div class="bill-content">
+                  <div class="bill-summary">
+                    {{ bill.parsed.plain_summary if bill.parsed.plain_summary else bill.original_summary[:400] + '...'
+                    }}
+                  </div>
+
+                  {% if bill.parsed.benefits or bill.parsed.drawbacks %}
+                  <div class="impact-section">
+                    <div class="impact-grid">
+                      {% if bill.parsed.benefits %}
+                      <div class="impact-card impact-helps">
+                        <h4><i class="fas fa-thumbs-up"></i> Benefits</h4>
+                        <ul class="impact-list">
+                          {% for point in bill.parsed.benefits.split('.') if point.strip() %}
+                          <li>{{ point.strip() }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                      {% endif %}
+
+                      {% if bill.parsed.drawbacks %}
+                      <div class="impact-card impact-hurts">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Drawbacks</h4>
+                        <ul class="impact-list">
+                          {% for point in bill.parsed.drawbacks.split('.') if point.strip() %}
+                          <li>{{ point.strip() }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% endif %}
+
+                  {% if bill.parsed.short_term or bill.parsed.long_term %}
+                  <div class="analysis-outline">
+                    <h3><i class="fas fa-chart-line"></i> Impact Analysis</h3>
+                    <ul class="analysis-points">
+                      {% if bill.parsed.short_term %}
+                      <li><strong>Short-Term (1-2 years):</strong> {{ bill.parsed.short_term }}</li>
+                      {% endif %}
+                      {% if bill.parsed.long_term %}
+                      <li><strong>Long-Term (5+ years):</strong> {{ bill.parsed.long_term }}</li>
+                      {% endif %}
+                      {% if bill.parsed.controversies %}
+                      <li><strong>Key Debates:</strong> {{ bill.parsed.controversies }}</li>
+                      {% endif %}
+                      {% if bill.parsed.cost_savings %}
+                      <li><strong>Financial Impact:</strong> {{ bill.parsed.cost_savings }}</li>
+                      {% endif %}
                     </ul>
                   </div>
                   {% endif %}
 
-                  {% if bill.parsed.who_hurts %}
-                  <div class="impact-card impact-hurts">
-                    <h4><i class="fas fa-exclamation-triangle"></i> Potential Concerns</h4>
-                    <ul class="impact-list">
-                      {% for point in bill.parsed.who_hurts.split('.') if point.strip() %}
-                      <li>{{ point.strip() }}</li>
-                      {% endfor %}
-                    </ul>
+                  <div class="action-buttons">
+                    <a href="/bill/{{ bill.bill_id }}" class="action-button view-details">
+                      <i class="fas fa-microscope"></i>
+                      Deep Analysis
+                    </a>
+
+                    {% if bill.get('source_url') %}
+                    <a href="{{ bill.source_url }}" target="_blank" class="action-button source-link">
+                      <i class="fas fa-external-link-alt"></i>
+                      Official Source
+                    </a>
+                    {% endif %}
+
+                    <a href="javascript:void(0)"
+                      onclick="openChatGPT('{{ bill.title }}', '{{ bill.original_summary[:300] }}')"
+                      class="action-button chatgpt-link">
+                      <i class="fas fa-robot"></i>
+                      Ask AI
+                    </a>
                   </div>
-                  {% endif %}
                 </div>
               </div>
-              {% endif %}
-
-              {% if bill.parsed.short_term or bill.parsed.long_term %}
-              <div class="analysis-outline">
-                <h3><i class="fas fa-chart-line"></i> Impact Analysis</h3>
-                <ul class="analysis-points">
-                  {% if bill.parsed.short_term %}
-                  <li><strong>Short-Term (1-2 years):</strong> {{ bill.parsed.short_term }}</li>
-                  {% endif %}
-                  {% if bill.parsed.long_term %}
-                  <li><strong>Long-Term (5+ years):</strong> {{ bill.parsed.long_term }}</li>
-                  {% endif %}
-                  {% if bill.parsed.controversies %}
-                  <li><strong>Key Debates:</strong> {{ bill.parsed.controversies }}</li>
-                  {% endif %}
-                  {% if bill.parsed.cost_savings %}
-                  <li><strong>Financial Impact:</strong> {{ bill.parsed.cost_savings }}</li>
-                  {% endif %}
-                </ul>
-              </div>
-              {% endif %}
-
-              <div class="action-buttons">
-                <a href="/bill/{{ bill.bill_id }}" class="action-button view-details">
-                  <i class="fas fa-microscope"></i>
-                  Deep Analysis
-                </a>
-
-                {% if bill.get('source_url') %}
-                <a href="{{ bill.source_url }}" target="_blank" class="action-button source-link">
-                  <i class="fas fa-external-link-alt"></i>
-                  Official Source
-                </a>
-                {% endif %}
-
-                <a href="javascript:void(0)"
-                  onclick="openChatGPT('{{ bill.title }}', '{{ bill.original_summary[:300] }}')"
-                  class="action-button chatgpt-link">
-                  <i class="fas fa-robot"></i>
-                  Ask AI
-                </a>
-              </div>
+              {% endfor %}
             </div>
           </div>
-          {% endif %}
-          {% endfor %}
         </div>
       </div>
 
       <!-- State Bills Tab -->
       <div id="state-tab" class="tab-content">
-        <div class="bills-container">
-          {% for bill in reports %}
-          {% if bill.get('source', '').lower() != 'federal' and 'congress' not in bill.get('source', '').lower() %}
-          <div class="bill-frame">
-            <div class="bill-header">
-              <div class="bill-type-badge">
-                <i class="fas fa-map-marker-alt"></i> State
-              </div>
-              <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
-              <h2 class="bill-title">{{ bill.title }}</h2>
-              <p class="bill-sponsor">
-                <i class="fas fa-user-tie"></i>
-                Sponsored by {{ bill.sponsor }}
-              </p>
-            </div>
 
-            <div class="bill-content">
-              <div class="bill-summary">
-                {{ bill.parsed.plain_summary if bill.parsed.plain_summary else bill.original_summary[:400] + '...' }}
-              </div>
+        <!-- Active State Bills Section -->
+        <div class="status-section">
+          <div class="section-header active-header" onclick="toggleSection('state-active')">
+            <h3>
+              <i class="fas fa-play-circle"></i>
+              Active State Bills
+              <span class="bill-count">({{ active_state|length }})</span>
+            </h3>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+          </div>
+          <div id="state-active" class="section-content active">
+            <div class="bills-container">
+              {% for bill in active_state %}
+              <div class="bill-frame">
+                <div class="bill-header">
+                  <div class="bill-type-badge">
+                    <i class="fas fa-map-marker-alt"></i> State
+                  </div>
+                  <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
+                  <h2 class="bill-title">{{ bill.title }}</h2>
+                  <p class="bill-sponsor">
+                    <i class="fas fa-user-tie"></i>
+                    Sponsored by {{ bill.sponsor }}
+                  </p>
+                </div>
 
-              {% if bill.parsed.who_helps or bill.parsed.who_hurts %}
-              <div class="impact-section">
-                <div class="impact-grid">
-                  {% if bill.parsed.who_helps %}
-                  <div class="impact-card impact-helps">
-                    <h4><i class="fas fa-thumbs-up"></i> Who Benefits</h4>
-                    <ul class="impact-list">
-                      {% for point in bill.parsed.who_helps.split('.') if point.strip() %}
-                      <li>{{ point.strip() }}</li>
-                      {% endfor %}
+                <div class="bill-content">
+                  <div class="bill-summary">
+                    {{ bill.parsed.plain_summary if bill.parsed.plain_summary else bill.original_summary[:400] + '...'
+                    }}
+                  </div>
+
+                  {% if bill.parsed.benefits or bill.parsed.drawbacks %}
+                  <div class="impact-section">
+                    <div class="impact-grid">
+                      {% if bill.parsed.benefits %}
+                      <div class="impact-card impact-helps">
+                        <h4><i class="fas fa-thumbs-up"></i> Benefits</h4>
+                        <ul class="impact-list">
+                          {% for point in bill.parsed.benefits.split('.') if point.strip() %}
+                          <li>{{ point.strip() }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                      {% endif %}
+
+                      {% if bill.parsed.drawbacks %}
+                      <div class="impact-card impact-hurts">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Drawbacks</h4>
+                        <ul class="impact-list">
+                          {% for point in bill.parsed.drawbacks.split('.') if point.strip() %}
+                          <li>{{ point.strip() }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% endif %}
+
+                  {% if bill.parsed.short_term or bill.parsed.long_term %}
+                  <div class="analysis-outline">
+                    <h3><i class="fas fa-chart-line"></i> Impact Analysis</h3>
+                    <ul class="analysis-points">
+                      {% if bill.parsed.short_term %}
+                      <li><strong>Short-Term (1-2 years):</strong> {{ bill.parsed.short_term }}</li>
+                      {% endif %}
+                      {% if bill.parsed.long_term %}
+                      <li><strong>Long-Term (5+ years):</strong> {{ bill.parsed.long_term }}</li>
+                      {% endif %}
+                      {% if bill.parsed.controversies %}
+                      <li><strong>Key Debates:</strong> {{ bill.parsed.controversies }}</li>
+                      {% endif %}
+                      {% if bill.parsed.cost_savings %}
+                      <li><strong>Financial Impact:</strong> {{ bill.parsed.cost_savings }}</li>
+                      {% endif %}
                     </ul>
                   </div>
                   {% endif %}
 
-                  {% if bill.parsed.who_hurts %}
-                  <div class="impact-card impact-hurts">
-                    <h4><i class="fas fa-exclamation-triangle"></i> Potential Concerns</h4>
-                    <ul class="impact-list">
-                      {% for point in bill.parsed.who_hurts.split('.') if point.strip() %}
-                      <li>{{ point.strip() }}</li>
-                      {% endfor %}
-                    </ul>
+                  <div class="action-buttons">
+                    <a href="/bill/{{ bill.bill_id }}" class="action-button view-details">
+                      <i class="fas fa-microscope"></i>
+                      Deep Analysis
+                    </a>
+
+                    {% if bill.get('source_url') %}
+                    <a href="{{ bill.source_url }}" target="_blank" class="action-button source-link">
+                      <i class="fas fa-external-link-alt"></i>
+                      Official Source
+                    </a>
+                    {% endif %}
+
+                    <a href="javascript:void(0)"
+                      onclick="openChatGPT('{{ bill.title }}', '{{ bill.original_summary[:300] }}')"
+                      class="action-button chatgpt-link">
+                      <i class="fas fa-robot"></i>
+                      Ask AI
+                    </a>
                   </div>
-                  {% endif %}
                 </div>
               </div>
-              {% endif %}
-
-              {% if bill.parsed.short_term or bill.parsed.long_term %}
-              <div class="analysis-outline">
-                <h3><i class="fas fa-chart-line"></i> Impact Analysis</h3>
-                <ul class="analysis-points">
-                  {% if bill.parsed.short_term %}
-                  <li><strong>Short-Term (1-2 years):</strong> {{ bill.parsed.short_term }}</li>
-                  {% endif %}
-                  {% if bill.parsed.long_term %}
-                  <li><strong>Long-Term (5+ years):</strong> {{ bill.parsed.long_term }}</li>
-                  {% endif %}
-                  {% if bill.parsed.controversies %}
-                  <li><strong>Key Debates:</strong> {{ bill.parsed.controversies }}</li>
-                  {% endif %}
-                  {% if bill.parsed.cost_savings %}
-                  <li><strong>Financial Impact:</strong> {{ bill.parsed.cost_savings }}</li>
-                  {% endif %}
-                </ul>
-              </div>
-              {% endif %}
-
-              <div class="action-buttons">
-                <a href="/bill/{{ bill.bill_id }}" class="action-button view-details">
-                  <i class="fas fa-microscope"></i>
-                  Deep Analysis
-                </a>
-
-                {% if bill.get('source_url') %}
-                <a href="{{ bill.source_url }}" target="_blank" class="action-button source-link">
-                  <i class="fas fa-external-link-alt"></i>
-                  Official Source
-                </a>
-                {% endif %}
-
-                <a href="javascript:void(0)"
-                  onclick="openChatGPT('{{ bill.title }}', '{{ bill.original_summary[:300] }}')"
-                  class="action-button chatgpt-link">
-                  <i class="fas fa-robot"></i>
-                  Ask AI
-                </a>
-              </div>
+              {% endfor %}
             </div>
           </div>
-          {% endif %}
-          {% endfor %}
+        </div>
+
+        <!-- Recently Passed State Bills Section -->
+        <div class="status-section">
+          <div class="section-header passed-header collapsed" onclick="toggleSection('state-passed')">
+            <h3>
+              <i class="fas fa-check-circle"></i>
+              Recently Passed State Bills
+              <span class="bill-count">({{ passed_state|length }})</span>
+            </h3>
+            <i class="fas fa-chevron-right toggle-icon"></i>
+          </div>
+          <div id="state-passed" class="section-content">
+            {% if passed_state %}
+            <div class="bills-container">
+              {% for bill in passed_state %}
+              <div class="bill-frame">
+                <div class="bill-header">
+                  <div class="bill-type-badge">
+                    <i class="fas fa-map-marker-alt"></i> State (Passed)
+                  </div>
+                  <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
+                  <h2 class="bill-title">{{ bill.title }}</h2>
+                  <p class="bill-sponsor">
+                    <i class="fas fa-user-tie"></i>
+                    Sponsored by {{ bill.sponsor }}
+                  </p>
+                </div>
+
+                <div class="bill-content">
+                  <div class="bill-summary">
+                    {{ bill.parsed.plain_summary if bill.parsed.plain_summary else bill.original_summary[:400] + '...'
+                    }}
+                  </div>
+
+                  <div class="action-buttons">
+                    <a href="/bill/{{ bill.bill_id }}" class="action-button view-details">
+                      <i class="fas fa-microscope"></i>
+                      Deep Analysis
+                    </a>
+
+                    {% if bill.get('source_url') %}
+                    <a href="{{ bill.source_url }}" target="_blank" class="action-button source-link">
+                      <i class="fas fa-external-link-alt"></i>
+                      Official Source
+                    </a>
+                    {% endif %}
+
+                    <a href="javascript:void(0)"
+                      onclick="openChatGPT('{{ bill.title }}', '{{ bill.original_summary[:300] }}')"
+                      class="action-button chatgpt-link">
+                      <i class="fas fa-robot"></i>
+                      Ask AI
+                    </a>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-bills">
+              <i class="fas fa-info-circle"></i>
+              <p>No recently passed state bills in the last 30 days.</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Recently Failed State Bills Section -->
+        <div class="status-section">
+          <div class="section-header failed-header collapsed" onclick="toggleSection('state-failed')">
+            <h3>
+              <i class="fas fa-times-circle"></i>
+              Recently Failed State Bills
+              <span class="bill-count">({{ failed_state|length }})</span>
+            </h3>
+            <i class="fas fa-chevron-right toggle-icon"></i>
+          </div>
+          <div id="state-failed" class="section-content">
+            {% if failed_state %}
+            <div class="bills-container">
+              {% for bill in failed_state %}
+              <div class="bill-frame">
+                <div class="bill-header">
+                  <div class="bill-type-badge">
+                    <i class="fas fa-map-marker-alt"></i> State (Failed)
+                  </div>
+                  <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
+                  <h2 class="bill-title">{{ bill.title }}</h2>
+                  <p class="bill-sponsor">
+                    <i class="fas fa-user-tie"></i>
+                    Sponsored by {{ bill.sponsor }}
+                  </p>
+                </div>
+
+                <div class="bill-content">
+                  <div class="bill-summary">
+                    {{ bill.parsed.plain_summary if bill.parsed.plain_summary else bill.original_summary[:400] + '...'
+                    }}
+                  </div>
+
+                  <div class="action-buttons">
+                    <a href="/bill/{{ bill.bill_id }}" class="action-button view-details">
+                      <i class="fas fa-microscope"></i>
+                      Deep Analysis
+                    </a>
+
+                    {% if bill.get('source_url') %}
+                    <a href="{{ bill.source_url }}" target="_blank" class="action-button source-link">
+                      <i class="fas fa-external-link-alt"></i>
+                      Official Source
+                    </a>
+                    {% endif %}
+
+                    <a href="javascript:void(0)"
+                      onclick="openChatGPT('{{ bill.title }}', '{{ bill.original_summary[:300] }}')"
+                      class="action-button chatgpt-link">
+                      <i class="fas fa-robot"></i>
+                      Ask AI
+                    </a>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-bills">
+              <i class="fas fa-info-circle"></i>
+              <p>No recently failed state bills in the last 30 days.</p>
+            </div>
+            {% endif %}
+          </div>
         </div>
       </div>
 
@@ -959,6 +1209,27 @@ What questions do you have about this bill?`;
       const encodedPrompt = encodeURIComponent(prompt);
       const chatGPTUrl = `https://chat.openai.com/?q=${encodedPrompt}`;
       window.open(chatGPTUrl, '_blank');
+    }
+
+    // Section toggle functionality for collapsible status groups
+    function toggleSection(sectionId) {
+      const content = document.getElementById(sectionId);
+      const header = content.previousElementSibling;
+      const isActive = content.classList.contains('active');
+
+      if (isActive) {
+        // Collapse section
+        content.classList.remove('active');
+        header.classList.add('collapsed');
+        header.querySelector('.toggle-icon').classList.remove('fa-chevron-down');
+        header.querySelector('.toggle-icon').classList.add('fa-chevron-right');
+      } else {
+        // Expand section
+        content.classList.add('active');
+        header.classList.remove('collapsed');
+        header.querySelector('.toggle-icon').classList.remove('fa-chevron-right');
+        header.querySelector('.toggle-icon').classList.add('fa-chevron-down');
+      }
     }
 
     // Tab switching functionality

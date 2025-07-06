@@ -33,9 +33,47 @@ async def read_root(request: Request):
         reports = []
         generated_at = "No data available"
 
+    # Filter bills by status and source
+    active_federal = []
+    passed_federal = []
+    failed_federal = []
+    active_state = []
+    passed_state = []
+    failed_state = []
+
+    for bill in reports:
+        source = bill.get('source', '').lower()
+        status = bill.get('status', '').lower()
+
+        # Determine if federal or state
+        is_federal = (source == 'federal' or 'congress' in source)
+
+        # Categorize by status
+        if status in ['passed', 'signed', 'enacted']:
+            if is_federal:
+                passed_federal.append(bill)
+            else:
+                passed_state.append(bill)
+        elif status in ['failed', 'defeated', 'killed', 'died', 'vetoed']:
+            if is_federal:
+                failed_federal.append(bill)
+            else:
+                failed_state.append(bill)
+        else:  # active, filed, referred, etc.
+            if is_federal:
+                active_federal.append(bill)
+            else:
+                active_state.append(bill)
+
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "reports": reports,
+        "reports": reports,  # Keep for backwards compatibility
+        "active_federal": active_federal,
+        "passed_federal": passed_federal,
+        "failed_federal": failed_federal,
+        "active_state": active_state,
+        "passed_state": passed_state,
+        "failed_state": failed_state,
         "generated_at": generated_at,
         "total_bills": len(reports)
     })

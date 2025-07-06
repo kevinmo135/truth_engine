@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 import hashlib
 
 
@@ -118,7 +118,125 @@ class BillAnalysisCache:
         """Clear all cached data"""
         self.cache_data = {}
         self._save_cache()
-        print("🗑️ Cache cleared")
+        print("��️ Cache cleared")
+
+    def cache_bill_analysis(self, bill_id: str, title: str, summary: str,
+                            analysis: str, status: str = "active",
+                            status_date: str = None) -> bool:
+        """Cache a bill analysis with status tracking"""
+        from datetime import datetime
+
+        bill_key = self._generate_bill_key(bill_id, title, summary)
+
+        # Get existing entry or create new one
+        existing_entry = self.cache_data.get(bill_key, {})
+
+        # Track status changes
+        current_status = existing_entry.get('status', 'active')
+        current_date = datetime.now().isoformat()
+
+        # If status changed, update the status change date
+        if status != current_status:
+            status_change_date = current_date
+            print(
+                f"📈 Bill {bill_id} status changed: {current_status} -> {status}")
+        else:
+            status_change_date = existing_entry.get(
+                'status_change_date', current_date)
+
+        self.cache_data[bill_key] = {
+            'bill_id': bill_id,
+            'title': title,
+            'summary': summary,
+            'analysis': analysis,
+            'cached_date': existing_entry.get('cached_date', current_date),
+            'last_accessed': current_date,
+            'access_count': existing_entry.get('access_count', 0) + 1,
+            'status': status,
+            'status_change_date': status_change_date,
+            'original_status': existing_entry.get('original_status', 'active')
+        }
+
+        return self._save_cache()
+
+    def get_bills_by_status(self) -> Dict[str, List[Dict]]:
+        """Get bills grouped by their current status"""
+        from datetime import datetime, timedelta
+
+        status_groups = {
+            'active': [],
+            'passed': [],
+            'failed': [],
+            'vetoed': [],
+            'withdrawn': []
+        }
+
+        current_date = datetime.now()
+        one_month_ago = current_date - timedelta(days=30)
+
+        for bill_key, bill_data in self.cache_data.items():
+            status = bill_data.get('status', 'active').lower()
+
+            # Check if bill should be cleaned up (older than 1 month and not active)
+            status_change_date = bill_data.get('status_change_date')
+            if status_change_date and status != 'active':
+                try:
+                    change_date = datetime.fromisoformat(
+                        status_change_date.replace('Z', '+00:00'))
+                    if change_date < one_month_ago:
+                        # Mark for cleanup but don't remove during iteration
+                        continue
+                except:
+                    pass
+
+            # Group by status
+            if status == 'active':
+                status_groups['active'].append(bill_data)
+            elif status in ['passed', 'enacted', 'signed']:
+                status_groups['passed'].append(bill_data)
+            elif status in ['failed', 'died', 'killed', 'defeated']:
+                status_groups['failed'].append(bill_data)
+            elif status in ['vetoed']:
+                status_groups['vetoed'].append(bill_data)
+            elif status in ['withdrawn']:
+                status_groups['withdrawn'].append(bill_data)
+
+        return status_groups
+
+    def cleanup_old_bills(self) -> int:
+        """Remove bills older than 1 month that are not active"""
+        from datetime import datetime, timedelta
+
+        current_date = datetime.now()
+        one_month_ago = current_date - timedelta(days=30)
+
+        bills_to_remove = []
+
+        for bill_key, bill_data in self.cache_data.items():
+            status = bill_data.get('status', 'active').lower()
+            status_change_date = bill_data.get('status_change_date')
+
+            # Only cleanup non-active bills
+            if status != 'active' and status_change_date:
+                try:
+                    change_date = datetime.fromisoformat(
+                        status_change_date.replace('Z', '+00:00'))
+                    if change_date < one_month_ago:
+                        bills_to_remove.append(bill_key)
+                except:
+                    pass
+
+        # Remove old bills
+        for bill_key in bills_to_remove:
+            bill_id = self.cache_data[bill_key].get('bill_id', 'unknown')
+            print(f"🗑️ Cleaning up old bill: {bill_id}")
+            del self.cache_data[bill_key]
+
+        if bills_to_remove:
+            self._save_cache()
+            print(f"✅ Cleaned up {len(bills_to_remove)} old bills")
+
+        return len(bills_to_remove)
 
 
 # Global cache instance

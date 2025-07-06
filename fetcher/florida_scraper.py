@@ -261,6 +261,63 @@ class FloridaBillScraper:
             if len(summary) > 500:
                 summary = summary[:500] + "..."
 
+            # Check for completion status
+            page_text_full = soup.get_text().lower()
+            final_completion_patterns = [
+                r'bill\s+(passed|failed|died|killed|defeated)',
+                r'(signed into law|became law|enacted)',
+                r'(vetoed|withdrawn)\s+(by|from)',
+                r'final\s+(passage|vote|reading)\s+(passed|failed)',
+                r'governor\s+(signed|vetoed)',
+                r'(cs\s+passed|committee\s+substitute\s+passed)',
+                r'status:\s*(passed|failed|died|enacted|signed|vetoed|withdrawn)'
+            ]
+
+            bill_is_completed = False
+            completion_reason = None
+            bill_status = "Active"
+
+            for pattern in final_completion_patterns:
+                match = re.search(pattern, page_text_full, re.IGNORECASE)
+                if match:
+                    bill_is_completed = True
+                    completion_reason = match.group(0).lower()
+
+                    # Determine the specific status
+                    if any(word in completion_reason for word in ['passed', 'enacted', 'signed into law', 'became law']):
+                        bill_status = "Passed"
+                    elif any(word in completion_reason for word in ['failed', 'died', 'killed', 'defeated']):
+                        bill_status = "Failed"
+                    elif 'vetoed' in completion_reason:
+                        bill_status = "Vetoed"
+                    elif 'withdrawn' in completion_reason:
+                        bill_status = "Withdrawn"
+                    else:
+                        bill_status = "Completed"
+                    break
+
+            # Only skip if it's clearly an old completed bill (no recent activity)
+            if bill_is_completed:
+                import datetime
+                current_year = datetime.datetime.now().year
+
+                # Check if there's recent activity (current or previous year)
+                has_recent_activity = (str(current_year) in page_text_full or
+                                       str(current_year - 1) in page_text_full or
+                                       '2024' in page_text_full or '2025' in page_text_full)
+
+                if not has_recent_activity:
+                    print(
+                        f"⏭️ Skipping old completed bill {bill_num} (reason: {completion_reason}, no recent activity)")
+                    return None
+                else:
+                    print(
+                        f"✅ Including recently completed bill {bill_num} (status: {bill_status}, reason: {completion_reason})")
+            else:
+                bill_status = "Active"
+                print(
+                    f"✅ Including active bill {bill_num} (status: {bill_status})")
+
             # Use the direct bill URL as the source URL
             return {
                 'title': title,
@@ -273,9 +330,10 @@ class FloridaBillScraper:
                 'state': 'FL',
                 'chamber': chamber,
                 'session': year,
-                'status': 'Active',
-                'last_action': 'Filed',
-                'last_action_date': ''
+                'status': bill_status,
+                'last_action': bill_status,
+                'last_action_date': '',
+                'completion_reason': completion_reason if bill_is_completed else None
             }
 
         except Exception as e:
@@ -319,18 +377,44 @@ class FloridaBillScraper:
 
             bill_is_completed = False
             completion_reason = None
+            bill_status = "Active"
 
             for pattern in final_completion_patterns:
                 match = re.search(pattern, page_text, re.IGNORECASE)
                 if match:
                     bill_is_completed = True
-                    completion_reason = match.group(0)
+                    completion_reason = match.group(0).lower()
+
+                    # Determine the specific status
+                    if any(word in completion_reason for word in ['passed', 'enacted', 'signed into law', 'became law']):
+                        bill_status = "Passed"
+                    elif any(word in completion_reason for word in ['failed', 'died', 'killed', 'defeated']):
+                        bill_status = "Failed"
+                    elif 'vetoed' in completion_reason:
+                        bill_status = "Vetoed"
+                    elif 'withdrawn' in completion_reason:
+                        bill_status = "Withdrawn"
+                    else:
+                        bill_status = "Completed"
                     break
 
+            # Only skip if it's clearly an old completed bill (no recent activity)
             if bill_is_completed:
-                print(
-                    f"⏭️ Skipping completed bill {bill_num} (reason: {completion_reason})")
-                return None
+                import datetime
+                current_year = datetime.datetime.now().year
+
+                # Check if there's recent activity (current or previous year)
+                has_recent_activity = (str(current_year) in page_text or
+                                       str(current_year - 1) in page_text or
+                                       '2024' in page_text or '2025' in page_text)
+
+                if not has_recent_activity:
+                    print(
+                        f"⏭️ Skipping old completed bill {bill_num} (reason: {completion_reason}, no recent activity)")
+                    return None
+                else:
+                    print(
+                        f"✅ Including recently completed bill {bill_num} (status: {bill_status}, reason: {completion_reason})")
 
             # Look for ACTIVE/NEW status indicators - KEEP these bills
             active_status_patterns = [
@@ -345,30 +429,31 @@ class FloridaBillScraper:
                 r'(2024|2025)',  # Recent activity
             ]
 
-            is_active = False
-            bill_status = "Active"
+            # If not completed, check for active status indicators
+            if not bill_is_completed:
+                is_active = False
 
-            for pattern in active_status_patterns:
-                match = re.search(pattern, page_text, re.IGNORECASE)
-                if match:
-                    is_active = True
-                    bill_status = match.group(0).strip().title()
-                    break
+                for pattern in active_status_patterns:
+                    match = re.search(pattern, page_text, re.IGNORECASE)
+                    if match:
+                        is_active = True
+                        bill_status = match.group(0).strip().title()
+                        break
 
-            # If no clear status found, assume it's active if from recent year
-            if not is_active:
-                import datetime
-                current_year = datetime.datetime.now().year
-                if str(current_year) in page_text or str(current_year - 1) in page_text:
-                    is_active = True
-                    bill_status = "Filed"
-                else:
-                    print(
-                        f"⏭️ Skipping bill {bill_num} (no recent activity found)")
-                    return None
+                # If no clear status found, assume it's active if from recent year
+                if not is_active:
+                    import datetime
+                    current_year = datetime.datetime.now().year
+                    if str(current_year) in page_text or str(current_year - 1) in page_text:
+                        is_active = True
+                        bill_status = "Filed"
+                    else:
+                        print(
+                            f"⏭️ Skipping bill {bill_num} (no recent activity found)")
+                        return None
 
-            print(
-                f"✅ Including active bill {bill_num} (status: {bill_status})")
+                print(
+                    f"✅ Including active bill {bill_num} (status: {bill_status})")
 
             # Extract title first - prioritize H2 which contains the bill number and title
             title_selectors = ['h2', 'h1',
@@ -521,7 +606,8 @@ class FloridaBillScraper:
                 'session': '2025',
                 'status': bill_status,
                 'last_action': bill_status,
-                'last_action_date': ''
+                'last_action_date': '',
+                'completion_reason': completion_reason if bill_is_completed else None
             }
 
         except Exception as e:

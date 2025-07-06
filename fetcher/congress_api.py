@@ -1,28 +1,28 @@
 import requests
-import os
+from typing import Dict, List, Optional
 from dotenv import load_dotenv
-from typing import List, Dict, Optional
-import time
+import os
 
+# Load environment variables
 load_dotenv()
 
 
 class CongressAPI:
     """
-    Congress.gov API integration for fetching federal legislative data
+    Congress.gov API client for fetching federal bills
     """
 
     def __init__(self):
         self.api_key = os.getenv('CONGRESS_API_KEY')
         if not self.api_key:
-            raise ValueError("CONGRESS_API_KEY environment variable not set")
+            raise ValueError(
+                "CONGRESS_API_KEY environment variable is required")
 
         self.base_url = "https://api.congress.gov/v3"
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'TruthEngine/1.0',
-            'Accept': 'application/json',
-            'X-API-Key': self.api_key
+            'User-Agent': 'Truth-Engine/1.0',
+            'Accept': 'application/json'
         })
 
     def _make_request(self, endpoint: str, params: Dict = None) -> Dict:
@@ -114,6 +114,9 @@ class CongressAPI:
             last_action = latest_action.get('text', 'No action recorded')
             last_action_date = latest_action.get('actionDate', '')
 
+            # Parse status from last action
+            bill_status = self._parse_bill_status(last_action)
+
             # Format the bill number properly for display
             formatted_bill_number = self._format_bill_number(
                 bill_type, bill_number)
@@ -128,7 +131,7 @@ class CongressAPI:
                 'bill_number': formatted_bill_number,  # Properly formatted number
                 'state': 'US',
                 'session': f"{congress}th Congress",
-                'status': last_action,
+                'status': bill_status,
                 'last_action': last_action,
                 'last_action_date': last_action_date
             }
@@ -165,6 +168,77 @@ class CongressAPI:
             return f"{title} {name} ({party})"
         else:
             return f"{title} {name}"
+
+    def _parse_bill_status(self, last_action: str) -> str:
+        """
+        Parse federal bill status from last action text
+        """
+        action_lower = last_action.lower()
+
+        # Check for passed/enacted status (most definitive first)
+        passed_indicators = [
+            'became public law',
+            'signed by president',
+            'presented to president',
+            'enrolled bill signed',
+            'public law no.',
+            'passed house and senate',
+            'passed both chambers',
+            'passed congress',
+            'resolution agreed to in house and senate',
+            'concurrent resolution agreed to',
+            'joint resolution passed',
+            'passed house',
+            'passed senate',
+            'passed/agreed to in house',
+            'passed/agreed to in senate',
+            'measure passed house',
+            'measure passed senate',
+            'bill passed',
+            'resolution agreed to',
+            'agreed to in house',
+            'agreed to in senate'
+        ]
+
+        for indicator in passed_indicators:
+            if indicator in action_lower:
+                return 'passed'
+
+        # Check for failed/dead status
+        failed_indicators = [
+            'failed',
+            'defeated',
+            'rejected',
+            'died in committee',
+            'killed',
+            'withdrawn by sponsor',
+            'motion to reconsider laid on the table',
+            'cloture motion withdrawn',
+            'motion to proceed withdrawn',
+            'failed to pass',
+            'motion failed',
+            'amendment rejected',
+            'bill failed'
+        ]
+
+        for indicator in failed_indicators:
+            if indicator in action_lower:
+                return 'failed'
+
+        # Check for vetoed status
+        veto_indicators = [
+            'vetoed',
+            'pocket vetoed',
+            'returned without approval',
+            'veto message received'
+        ]
+
+        for indicator in veto_indicators:
+            if indicator in action_lower:
+                return 'failed'  # Treating vetoed bills as failed for simplicity
+
+        # Everything else is considered active
+        return 'active'
 
     def _format_bill_number(self, bill_type: str, bill_number: str) -> str:
         """
