@@ -135,6 +135,24 @@
       letter-spacing: 0.5px;
     }
 
+    .bill-number {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #667eea;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      border: 2px solid rgba(102, 126, 234, 0.3);
+      border-radius: 25px;
+      padding: 0.75rem 2rem;
+      margin-bottom: 1.5rem;
+      display: inline-block;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
     .bill-title {
       font-size: 2rem;
       font-weight: 800;
@@ -466,6 +484,7 @@
           <i class="fas fa-map-marker-alt"></i> State
           {% endif %}
         </div>
+        <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
         <h1 class="bill-title">{{ bill.title }}</h1>
         <p class="bill-sponsor">
           <i class="fas fa-user"></i>

@@ -1,6 +1,7 @@
 from fetcher.congress_api import fetch_recent_federal_bills
 from fetcher.florida_scraper import fetch_recent_florida_bills
 from analyzer.summary import summarize_bill
+from analyzer.cache_manager import get_cache
 from writer.report_generator import create_digest, parse_gpt4_analysis
 from notifier.email import send_email_report
 
@@ -16,20 +17,41 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def show_cache_stats():
+    """Display cache statistics"""
+    cache = get_cache()
+    stats = cache.get_cache_stats()
+
+    print("📊 Cache Statistics:")
+    print(f"   📄 Total cached bills: {stats['total_cached_bills']}")
+    print(f"   🔄 Total cache hits: {stats['total_cache_hits']}")
+    print(f"   💰 OpenAI calls saved: {stats['estimated_openai_calls_saved']}")
+
+    if stats['total_cached_bills'] > 0:
+        print(
+            f"   💲 Estimated cost savings: ~${stats['estimated_openai_calls_saved'] * 0.03:.2f}")
+
+    return stats
+
+
 def generate_and_send_digest():
-    print("📥 Fetching federal and Florida bills...")
-    federal = fetch_recent_federal_bills()
-    florida = fetch_recent_florida_bills()
+    print("📥 Fetching ALL federal and Florida bills...")
+    federal = fetch_recent_federal_bills()  # Gets up to 50 federal bills
+    florida = fetch_recent_florida_bills()  # Gets ALL active Florida bills
     all_bills = federal + florida
+
+    # Show cache stats before processing
+    cache_stats = show_cache_stats()
 
     print(f"🧠 Summarizing {len(all_bills)} bills...")
     reports = []
     for i, bill in enumerate(all_bills):
+        bill_id = bill.get('bill_id', f"bill_{i+1}")
         print(
-            f"🔍 Analyzing bill {i+1}/{len(all_bills)}: {bill['title'][:50]}...")
+            f"🔍 Analyzing bill {i+1}/{len(all_bills)}: {bill_id} - {bill['title'][:50]}...")
 
         analysis_content = summarize_bill(
-            bill["title"], bill["summary"], bill["sponsor"])
+            bill["title"], bill["summary"], bill["sponsor"], bill_id)
         parsed_analysis = parse_gpt4_analysis(analysis_content)
 
         report = {
@@ -38,14 +60,25 @@ def generate_and_send_digest():
             "original_summary": bill['summary'],
             "analysis": analysis_content,
             "parsed": parsed_analysis,
-            "bill_id": f"bill_{i+1}",  # For web linking
+            # Use original bill_id, fallback to bill_N
+            "bill_id": bill.get('bill_id', f"bill_{i+1}"),
+            # Use proper bill number
+            "bill_number": bill.get('bill_number', bill.get('bill_id', f"bill_{i+1}")),
             "source_url": bill.get('source_url'),  # Include source URL
             "source": bill.get('source', 'unknown'),  # Include source type
+            "state": bill.get('state', 'Unknown'),  # Include state
+            "chamber": bill.get('chamber', 'Unknown'),  # Include chamber
+            "session": bill.get('session', 'Unknown'),  # Include session
+            "status": bill.get('status', 'Unknown'),  # Include status
         }
         reports.append(report)
 
     print("📝 Creating digest...")
     create_digest(reports)
+
+    # Show final cache statistics
+    print("\n📊 Final Cache Statistics:")
+    final_stats = show_cache_stats()
 
     if os.getenv("EMAIL_USERNAME") and os.getenv("EMAIL_PASSWORD"):
         print("📤 Sending email...")
@@ -129,9 +162,19 @@ if __name__ == "__main__":
                         help="Start scheduler only")
     parser.add_argument("--no-scheduler", action="store_true",
                         help="Start web server without scheduler")
+    parser.add_argument("--cache-stats", action="store_true",
+                        help="Show cache statistics")
+    parser.add_argument("--clear-cache", action="store_true",
+                        help="Clear analysis cache")
     args = parser.parse_args()
 
-    if args.run:
+    if args.cache_stats:
+        show_cache_stats()
+    elif args.clear_cache:
+        cache = get_cache()
+        cache.clear_cache()
+        print("🗑️ Cache cleared successfully")
+    elif args.run:
         generate_and_send_digest()
     elif args.scheduler:
         run_scheduler()

@@ -100,8 +100,8 @@ async def ask_question(bill_id: str, question: str = Form(...)):
         detailed_response = get_detailed_analysis(
             bill['title'],
             bill['original_summary'],
-            bill['sponsor'],
-            question
+            question,
+            bill_id
         )
 
         return JSONResponse({

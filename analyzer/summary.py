@@ -1,6 +1,7 @@
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
+from .cache_manager import get_cache
 
 # Load environment variables from .env file
 load_dotenv()
@@ -16,10 +17,26 @@ def get_openai_client():
     return OpenAI(api_key=api_key)
 
 
-def summarize_bill(title, summary, sponsor):
+def summarize_bill(title, summary, sponsor, bill_id=None):
     """
     Generate a structured analysis of a bill using GPT-4.
+    Uses caching to avoid re-analyzing the same bills.
     """
+    # Get cache instance
+    cache = get_cache()
+
+    # Use bill_id if provided, otherwise generate a temporary one
+    if bill_id is None:
+        bill_id = f"temp_{hash(title + summary) % 10000}"
+
+    # Check if bill is already cached
+    if cache.is_bill_cached(bill_id, title, summary):
+        cached_result = cache.get_cached_analysis(bill_id, title, summary)
+        if cached_result:
+            return cached_result.get("analysis", "")
+
+    print(f"🤖 Generating new analysis for {bill_id} (not in cache)")
+
     try:
         client = get_openai_client()
     except ValueError as e:
@@ -66,16 +83,38 @@ def summarize_bill(title, summary, sponsor):
             temperature=0.7
         )
 
-        return response.choices[0].message.content
+        analysis_result = response.choices[0].message.content
+
+        # Cache the result for future use
+        cache.cache_analysis(bill_id, title, summary, sponsor, analysis_result)
+
+        return analysis_result
 
     except Exception as e:
         return f"Analysis Error: Unable to generate analysis. {str(e)}"
 
 
-def get_detailed_analysis(bill_title, bill_summary, question):
+def get_detailed_analysis(bill_title, bill_summary, question, bill_id=None):
     """
     Answer specific questions about a bill using GPT-4.
+    Uses caching for frequently asked questions.
     """
+    # Get cache instance
+    cache = get_cache()
+
+    # Create a unique key for this specific question
+    question_key = f"{bill_id or 'temp'}_{hash(question) % 10000}"
+
+    # Check if this specific question about this bill is cached
+    if cache.is_bill_cached(question_key, bill_title, f"{bill_summary}|Q:{question}"):
+        cached_result = cache.get_cached_analysis(
+            question_key, bill_title, f"{bill_summary}|Q:{question}")
+        if cached_result:
+            return cached_result.get("analysis", "")
+
+    print(
+        f"🤖 Generating detailed analysis for question about {bill_id or 'bill'}")
+
     try:
         client = get_openai_client()
     except ValueError as e:
@@ -103,7 +142,13 @@ def get_detailed_analysis(bill_title, bill_summary, question):
             temperature=0.7
         )
 
-        return response.choices[0].message.content
+        analysis_result = response.choices[0].message.content
+
+        # Cache the result for future use
+        cache.cache_analysis(question_key, bill_title, f"{bill_summary}|Q:{question}",
+                             "User Question", analysis_result)
+
+        return analysis_result
 
     except Exception as e:
         return f"Error: Unable to generate response. {str(e)}"

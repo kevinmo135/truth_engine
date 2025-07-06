@@ -24,51 +24,104 @@ class FloridaBillScraper:
             'Connection': 'keep-alive',
         })
 
-    def scrape_florida_senate_bills(self, limit: int = 3) -> List[Dict]:
+    def scrape_florida_bills_from_house_site(self, limit: int = 5) -> List[Dict]:
         """
-        Scrape bills from Florida Senate website
+        Scrape Florida bills from Florida House website
+        (flhouse.gov has both House and Senate bills)
         """
         bills = []
         try:
-            print("🏛️ Scraping Florida Senate bills...")
+            print("🏛️ Scraping Florida bills from flhouse.gov...")
 
-            # Get the bills list page
-            url = "https://www.flsenate.gov/Session/Bills/2025"
-            response = self.session.get(url, timeout=10)
-            response.raise_for_status()
+            # Try different approaches to access the Florida House bills
+            base_urls = [
+                "https://www.flhouse.gov/Sections/Bills/bills.aspx?SessionId=105&HouseChamber=B",
+                "https://www.flhouse.gov/Sections/Bills/bills.aspx?SessionId=105",
+                "https://www.flhouse.gov/Sections/Bills/bills.aspx"
+            ]
 
-            soup = BeautifulSoup(response.content, 'html.parser')
-
-            # Find bill links - look for links that match bill patterns
-            bill_links = soup.find_all(
-                'a', href=re.compile(r'/Session/Bill/\d+/\d+'))
-
-            count = 0
-            for link in bill_links[:limit * 2]:  # Get extra in case some fail
-                if count >= limit:
-                    break
-
+            for base_url in base_urls:
                 try:
-                    bill_url = urljoin(url, link.get('href'))
-                    bill_data = self._scrape_senate_bill_detail(bill_url)
-                    if bill_data:
-                        bills.append(bill_data)
-                        count += 1
-                        time.sleep(1)  # Be respectful to the server
+                    print(f"🔍 Trying URL: {base_url}")
+                    response = self.session.get(base_url, timeout=15)
+
+                    # Check if we got the rejection message
+                    if "requested URL was rejected" in response.text.lower():
+                        print(f"❌ URL rejected by server: {base_url}")
+                        continue
+
+                    response.raise_for_status()
+                    soup = BeautifulSoup(response.content, 'html.parser')
+
+                    # Look for bill links in various formats
+                    bill_link_patterns = [
+                        r'/Sections/Bills/billsdetail\.aspx\?BillId=\d+',
+                        r'/Bills/billsdetail\.aspx\?.*BillId=\d+',
+                        r'billsdetail\.aspx\?.*BillId=\d+'
+                    ]
+
+                    found_links = []
+                    for pattern in bill_link_patterns:
+                        links = soup.find_all('a', href=re.compile(pattern))
+                        found_links.extend(links)
+
+                    if found_links:
+                        print(f"✅ Found {len(found_links)} bill links")
+                        count = 0
+                        processed = 0
+                        # Process ALL bills (or as many as reasonable) to find the best active ones
+                        # Process all 150 bills to ensure we don't miss important legislation
+                        # Process ALL bills found
+                        max_to_process = len(found_links)
+
+                        print(
+                            f"🔍 Processing ALL {max_to_process} bills to find active legislation...")
+
+                        for link in found_links:
+                            processed += 1
+                            try:
+                                bill_url = urljoin(base_url, link.get('href'))
+                                bill_data = self._scrape_florida_house_bill_detail(
+                                    bill_url)
+                                if bill_data:
+                                    bills.append(bill_data)
+                                    count += 1
+                                    print(
+                                        f"✅ Found active bill {count}: {bill_data['bill_number']} - {bill_data['title'][:50]}...")
+                                    # Be respectful to the server
+                                    # Slightly faster but still respectful
+                                    time.sleep(0.3)
+
+                                # Print progress every 20 bills
+                                if processed % 20 == 0:
+                                    print(
+                                        f"🔍 Processed {processed}/{max_to_process} bills, found {count} active bills")
+
+                            except Exception as e:
+                                print(
+                                    f"⚠️ Failed to scrape bill from {bill_url}: {e}")
+                                continue
+
+                        print(
+                            f"📊 FINAL: Processed {processed} bills, found {count} active bills total")
+
+                        if bills:
+                            break  # Found bills, no need to try other URLs
+
                 except Exception as e:
-                    print(f"⚠️ Failed to scrape bill from {bill_url}: {e}")
+                    print(f"⚠️ Failed to access {base_url}: {e}")
                     continue
 
-            print(f"✅ Scraped {len(bills)} bills from Florida Senate")
+            print(f"✅ Scraped {len(bills)} Florida bills from House site")
 
         except Exception as e:
-            print(f"❌ Failed to scrape Florida Senate: {e}")
+            print(f"❌ Failed to scrape Florida House site: {e}")
 
         return bills
 
-    def _scrape_senate_bill_detail(self, bill_url: str) -> Optional[Dict]:
+    def _scrape_florida_bill_detail(self, bill_url: str) -> Optional[Dict]:
         """
-        Scrape individual Florida Senate bill details
+        Scrape individual Florida bill details (both House and Senate)
         """
         try:
             response = self.session.get(bill_url, timeout=10)
@@ -82,15 +135,82 @@ class FloridaBillScraper:
                 return None
 
             year, bill_num = bill_match.groups()
-            bill_id = f"SB {bill_num}"
 
-            # Extract title
-            title_elem = soup.find('h1') or soup.find('h2')
-            title = title_elem.get_text(
-                strip=True) if title_elem else f"Florida Senate Bill {bill_num}"
+            # Extract title first - prioritize elements with bill numbers
+            raw_title = ""
+            # Look for H2 elements first (they usually contain bill numbers)
+            h2_elements = soup.find_all('h2')
+            for elem in h2_elements:
+                candidate_title = elem.get_text(strip=True)
+                if candidate_title and re.search(r'(HB|SB)\s*\d+', candidate_title, re.IGNORECASE):
+                    raw_title = candidate_title
+                    break
 
-            # Remove bill number from title if it appears at the start
-            title = re.sub(r'^(SB|CS/SB|CS/CS/SB)\s*\d+:\s*', '', title)
+            # If no H2 with bill number, try H1
+            if not raw_title:
+                h1_elements = soup.find_all('h1')
+                for elem in h1_elements:
+                    candidate_title = elem.get_text(strip=True)
+                    if candidate_title and re.search(r'(HB|SB)\s*\d+', candidate_title, re.IGNORECASE):
+                        raw_title = candidate_title
+                        break
+
+            # Fallback to first substantial title
+            if not raw_title:
+                title_elem = soup.find('h1') or soup.find('h2')
+                raw_title = title_elem.get_text(
+                    strip=True) if title_elem else f"Florida Bill {bill_num}"
+
+            # Extract the REAL bill number from the title (not the URL ID)
+            bill_number_match = re.search(
+                r'^((?:CS/)*(?:HB|SB)\s*\d+)', raw_title, re.IGNORECASE)
+
+            if bill_number_match:
+                # Found real bill number in title
+                real_bill_number = bill_number_match.group(1).strip()
+                real_bill_number = re.sub(
+                    r'\s+', ' ', real_bill_number.upper())
+
+                # Determine chamber from the real bill number
+                if 'HB' in real_bill_number:
+                    chamber = "House"
+                    sponsor_title = "Rep."
+                    bill_type = "House"
+                else:
+                    chamber = "Senate"
+                    sponsor_title = "Sen."
+                    bill_type = "Senate"
+
+                bill_id = real_bill_number
+                bill_number = real_bill_number.replace(' ', '-')
+
+                print(
+                    f"📋 Extracted real bill number: {real_bill_number} from title")
+            else:
+                # Fallback to URL ID method
+                page_text = soup.get_text().lower()
+                is_house_bill = 'house bill' in page_text or 'hb' in page_text
+
+                if is_house_bill:
+                    bill_id = f"HB {bill_num}"
+                    bill_number = f"HB-{bill_num}"
+                    chamber = "House"
+                    sponsor_title = "Rep."
+                    bill_type = "House"
+                else:
+                    bill_id = f"SB {bill_num}"
+                    bill_number = f"SB-{bill_num}"
+                    chamber = "Senate"
+                    sponsor_title = "Sen."
+                    bill_type = "Senate"
+
+            # Clean title by removing bill number from the beginning
+            title = re.sub(r'^((?:CS/)*(?:SB|HB)\s*\d+):\s*', '',
+                           raw_title, flags=re.IGNORECASE).strip()
+
+            # If title is now empty or too short, use the raw title
+            if not title or len(title) < 10:
+                title = raw_title
 
             # Extract sponsor
             sponsor = "Unknown"
@@ -100,7 +220,7 @@ class FloridaBillScraper:
                 sponsor_match = re.search(
                     r'by\s+([^;]+)', sponsor_text, re.IGNORECASE)
                 if sponsor_match:
-                    sponsor = f"Sen. {sponsor_match.group(1).strip()}"
+                    sponsor = f"{sponsor_title} {sponsor_match.group(1).strip()}"
 
             # Extract summary/description
             summary = ""
@@ -132,27 +252,26 @@ class FloridaBillScraper:
                             summary = text
                             break
 
-                        # If no summary found, use title as summary
+            # If no summary found, use title as summary
             if not summary:
-                summary = f"Florida Senate Bill {bill_num}: {title}"
+                summary = f"Florida {bill_type} Bill {bill_num}: {title}"
 
             # Clean up summary
             summary = re.sub(r'\s+', ' ', summary)
             if len(summary) > 500:
                 summary = summary[:500] + "..."
 
-            # Use the Florida Legislature official portal for Senate bills
-            search_url = f"https://www.flsenate.gov/Session/Bills/2025?searchOnlyCurrentVersion=True&searchQuery=SB+{bill_num}"
-
+            # Use the direct bill URL as the source URL
             return {
                 'title': title,
                 'summary': summary,
                 'sponsor': sponsor,
-                'source_url': search_url,  # Use search URL as fallback
+                'source_url': bill_url,
                 'source': 'florida',
                 'bill_id': bill_id,
+                'bill_number': bill_number,  # Properly formatted number
                 'state': 'FL',
-                'chamber': 'Senate',
+                'chamber': chamber,
                 'session': year,
                 'status': 'Active',
                 'last_action': 'Filed',
@@ -163,107 +282,312 @@ class FloridaBillScraper:
             print(f"❌ Failed to scrape bill detail from {bill_url}: {e}")
             return None
 
-    def scrape_florida_house_bills(self, limit: int = 2) -> List[Dict]:
+    def _scrape_florida_house_bill_detail(self, bill_url: str) -> Optional[Dict]:
         """
-        Scrape bills from Florida House website
+        Scrape individual Florida House bill details
         """
-        bills = []
         try:
-            print("🏠 Scraping Florida House bills...")
+            response = self.session.get(bill_url, timeout=15)
 
-            # Generate realistic Florida House bills with proper URLs
-            # Using the Florida Legislature search interface for reliable links
+            # Check if we got the rejection message
+            if "requested URL was rejected" in response.text.lower():
+                print(f"❌ URL rejected by server: {bill_url}")
+                return None
 
-            # Generate some recent house bill IDs
-            for i in range(1234, 1234 + limit * 3):  # Try a range of bill IDs
-                if len(bills) >= limit:
+            response.raise_for_status()
+            soup = BeautifulSoup(response.content, 'html.parser')
+
+            # Extract bill number from URL
+            bill_match = re.search(r'BillId=(\d+)', bill_url)
+            if not bill_match:
+                return None
+
+            bill_num = bill_match.group(1)
+            page_text = soup.get_text().lower()
+
+            # **FILTER: Only return bills that are NEW and haven't been voted on**
+            # Check for final/completion status - SKIP these bills
+            final_completion_patterns = [
+                r'bill\s+(passed|failed|died|killed|defeated)',
+                r'(signed into law|became law|enacted)',
+                r'(vetoed|withdrawn)\s+(by|from)',
+                r'final\s+(passage|vote|reading)\s+(passed|failed)',
+                r'governor\s+(signed|vetoed)',
+                r'(cs\s+passed|committee\s+substitute\s+passed)',
+                r'status:\s*(passed|failed|died|enacted|signed|vetoed|withdrawn)'
+            ]
+
+            bill_is_completed = False
+            completion_reason = None
+
+            for pattern in final_completion_patterns:
+                match = re.search(pattern, page_text, re.IGNORECASE)
+                if match:
+                    bill_is_completed = True
+                    completion_reason = match.group(0)
                     break
 
-                try:
-                    bill_data = self._create_realistic_house_bill(i)
-                    if bill_data:
-                        bills.append(bill_data)
-                        time.sleep(0.5)  # Be respectful
-                except Exception as e:
-                    print(f"⚠️ Skipping House bill {i}: {e}")
-                    continue
+            if bill_is_completed:
+                print(
+                    f"⏭️ Skipping completed bill {bill_num} (reason: {completion_reason})")
+                return None
 
-            print(f"✅ Generated {len(bills)} bills from Florida House")
+            # Look for ACTIVE/NEW status indicators - KEEP these bills
+            active_status_patterns = [
+                r'(filed|introduced|referred)',
+                r'in\s+(committee|subcommittee)',
+                r'(pending|awaiting|under\s+consideration)',
+                r'(first|second|third)\s+reading',
+                r'scheduled\s+for',
+                r'committee\s+(hearing|meeting)',
+                r'(reported|advanced)\s+from',
+                r'status:\s*(filed|introduced|referred|pending|active)',
+                r'(2024|2025)',  # Recent activity
+            ]
+
+            is_active = False
+            bill_status = "Active"
+
+            for pattern in active_status_patterns:
+                match = re.search(pattern, page_text, re.IGNORECASE)
+                if match:
+                    is_active = True
+                    bill_status = match.group(0).strip().title()
+                    break
+
+            # If no clear status found, assume it's active if from recent year
+            if not is_active:
+                import datetime
+                current_year = datetime.datetime.now().year
+                if str(current_year) in page_text or str(current_year - 1) in page_text:
+                    is_active = True
+                    bill_status = "Filed"
+                else:
+                    print(
+                        f"⏭️ Skipping bill {bill_num} (no recent activity found)")
+                    return None
+
+            print(
+                f"✅ Including active bill {bill_num} (status: {bill_status})")
+
+            # Extract title first - prioritize H2 which contains the bill number and title
+            title_selectors = ['h2', 'h1',
+                               '.bill-title', '#bill-title', '.title']
+            raw_title = ""
+            for selector in title_selectors:
+                # Get all elements, not just first
+                elements = soup.select(selector)
+                for elem in elements:
+                    candidate_title = elem.get_text(strip=True)
+                    # Check if this element contains a bill number pattern
+                    if candidate_title and re.search(r'(HB|SB)\s*\d+', candidate_title, re.IGNORECASE):
+                        raw_title = candidate_title
+                        break
+                if raw_title:  # Break outer loop if we found a title with bill number
+                    break
+
+            # If no title with bill number found, fall back to first substantial title
+            if not raw_title:
+                for selector in title_selectors:
+                    title_elem = soup.select_one(selector)
+                    if title_elem:
+                        raw_title = title_elem.get_text(strip=True)
+                        if raw_title and len(raw_title) > 5:
+                            break
+
+            if not raw_title:
+                raw_title = f"Florida Bill {bill_num}"
+
+            # Extract the REAL bill number from the title (not the URL ID)
+            # Look for patterns like "HB 123:", "SB 456:", "CS/HB 789:", etc.
+            bill_number_match = re.search(
+                r'^((?:CS/)*(?:HB|SB)\s*\d+)', raw_title, re.IGNORECASE)
+
+            if bill_number_match:
+                # Found real bill number in title
+                real_bill_number = bill_number_match.group(1).strip()
+                # Standardize format: "HB 123" or "SB 456"
+                real_bill_number = re.sub(
+                    r'\s+', ' ', real_bill_number.upper())
+
+                # Determine chamber from the real bill number
+                if 'HB' in real_bill_number:
+                    chamber = "House"
+                    sponsor_title = "Rep."
+                    bill_type = "House"
+                else:
+                    chamber = "Senate"
+                    sponsor_title = "Sen."
+                    bill_type = "Senate"
+
+                # Use real bill number for IDs
+                bill_id = real_bill_number  # e.g., "HB 123"
+                bill_number = real_bill_number.replace(
+                    ' ', '-')  # e.g., "HB-123"
+
+                print(
+                    f"📋 Extracted real bill number: {real_bill_number} from title")
+            else:
+                # Fallback to URL ID method if we can't find real bill number
+                print(
+                    f"⚠️ Could not extract bill number from title, using URL ID {bill_num}")
+
+                # Determine bill type from page content or URL parameters
+                url_lower = bill_url.lower()
+                if 'house' in url_lower or 'hb' in page_text or 'house bill' in page_text:
+                    bill_id = f"HB {bill_num}"
+                    bill_number = f"HB-{bill_num}"
+                    chamber = "House"
+                    sponsor_title = "Rep."
+                    bill_type = "House"
+                else:
+                    bill_id = f"SB {bill_num}"
+                    bill_number = f"SB-{bill_num}"
+                    chamber = "Senate"
+                    sponsor_title = "Sen."
+                    bill_type = "Senate"
+
+            # Clean title by removing bill number from the beginning
+            title = re.sub(r'^((?:CS/)*(?:SB|HB)\s*\d+):\s*', '',
+                           raw_title, flags=re.IGNORECASE).strip()
+
+            # If title is now empty or too short, use the raw title
+            if not title or len(title) < 10:
+                title = raw_title
+
+            # Extract sponsor
+            sponsor = "Unknown"
+            sponsor_patterns = [
+                r'sponsor[^:]*:\s*([^<\n]+)',
+                r'by\s+([^<\n,;]+)',
+                r'introduced\s+by\s+([^<\n,;]+)'
+            ]
+
+            page_text = soup.get_text()
+            for pattern in sponsor_patterns:
+                sponsor_match = re.search(pattern, page_text, re.IGNORECASE)
+                if sponsor_match:
+                    sponsor_name = sponsor_match.group(1).strip()
+                    sponsor = f"{sponsor_title} {sponsor_name}"
+                    break
+
+            # Extract summary/description
+            summary = ""
+            summary_selectors = [
+                '.bill-summary', '.summary', '.description',
+                '#summary', '#description', '.bill-text',
+                'div[class*="summary"]', 'div[class*="description"]'
+            ]
+
+            for selector in summary_selectors:
+                elem = soup.select_one(selector)
+                if elem:
+                    text = elem.get_text(strip=True)
+                    if len(text) > 50:  # Make sure it's substantial
+                        summary = text
+                        break
+
+            # If no summary found, try to extract from paragraphs
+            if not summary:
+                paragraphs = soup.find_all('p')
+                for p in paragraphs:
+                    text = p.get_text(strip=True)
+                    if len(text) > 100:  # Look for substantial paragraphs
+                        summary = text
+                        break
+
+            # If still no summary, use title as summary
+            if not summary:
+                summary = f"Florida {bill_type} Bill {bill_num}: {title}"
+
+            # Clean up summary
+            summary = re.sub(r'\s+', ' ', summary)
+            if len(summary) > 500:
+                summary = summary[:500] + "..."
+
+            # Use the direct bill URL as the source URL
+            source_url = bill_url
+
+            return {
+                'title': title,
+                'summary': summary,
+                'sponsor': sponsor,
+                'source_url': source_url,
+                'source': 'florida',
+                'bill_id': bill_id,
+                'bill_number': bill_number,  # Properly formatted number
+                'state': 'FL',
+                'chamber': chamber,
+                'session': '2025',
+                'status': bill_status,
+                'last_action': bill_status,
+                'last_action_date': ''
+            }
 
         except Exception as e:
-            print(f"❌ Failed to scrape Florida House: {e}")
-
-        return bills
-
-    def _create_realistic_house_bill(self, bill_num: int) -> Dict:
-        """
-        Create realistic Florida House bill data
-        """
-        # Realistic Florida House bill topics
-        topics = [
-            ("Education Funding Reform", "Rep. Maria Rodriguez (D)",
-             "Revises funding formulas for public schools to ensure equitable distribution of resources across all districts."),
-            ("Small Business Tax Relief", "Rep. James Thompson (R)",
-             "Provides tax incentives for small businesses with fewer than 50 employees to encourage economic growth."),
-            ("Healthcare Access Expansion", "Rep. Sarah Chen (D)",
-             "Expands access to healthcare services in rural areas through telemedicine and mobile clinic programs."),
-            ("Environmental Protection", "Rep. Michael Garcia (D)",
-             "Strengthens environmental regulations to protect Florida's waterways and wildlife habitats."),
-            ("Criminal Justice Reform", "Rep. David Wilson (R)",
-             "Reforms sentencing guidelines for non-violent offenses and expands rehabilitation programs."),
-        ]
-
-        topic_index = bill_num % len(topics)
-        title, sponsor, summary = topics[topic_index]
-
-        # Use the Florida Legislature search portal - most reliable public interface
-        # Users can search for the specific House bill number
-        actual_bill_url = f"https://www.flsenate.gov/Session/Bills/2025?searchOnlyCurrentVersion=True&searchQuery=HB+{bill_num}&orderBy=BillNumber&dir=ASC"
-
-        return {
-            'title': f"{title} Act",
-            'summary': summary,
-            'sponsor': sponsor,
-            'source_url': actual_bill_url,
-            'source': 'florida',
-            'bill_id': f"HB {bill_num}",
-            'state': 'FL',
-            'chamber': 'House',
-            'session': '2025',
-            'status': 'Active',
-            'last_action': 'Referred to Committee',
-            'last_action_date': '2025-01-15'
-        }
+            print(f"❌ Failed to scrape House bill detail from {bill_url}: {e}")
+            return None
 
 
-def fetch_recent_florida_bills(limit: int = 3) -> List[Dict]:
+def fetch_recent_florida_bills(limit: int = None) -> List[Dict]:
     """
-    Fetch recent Florida bills using direct web scraping
+    Fetch ALL active Florida bills using direct web scraping from flhouse.gov
+    (This site includes both House and Senate bills)
+
+    Args:
+        limit: Ignored - returns all active bills found
+
+    Returns:
+        List of all active Florida bills (typically 30-40 bills)
     """
-    print("🌴 Fetching Florida bills via direct web scraping...")
+    print("🌴 Fetching Florida bills via flhouse.gov scraping...")
 
     try:
         scraper = FloridaBillScraper()
 
-        bills = []
-
-        # Try to get some Senate bills
-        senate_limit = max(1, limit // 2)
-        senate_bills = scraper.scrape_florida_senate_bills(senate_limit)
-        bills.extend(senate_bills)
-
-        # Get House bills to fill the remaining slots
-        house_limit = limit - len(bills)
-        if house_limit > 0:
-            house_bills = scraper.scrape_florida_house_bills(house_limit)
-            bills.extend(house_bills)
+        # Get ALL Florida bills from the house site (includes both House and Senate)
+        # Process all bills to find the best active ones
+        all_bills = scraper.scrape_florida_bills_from_house_site(
+            limit=999)  # Get all active bills
 
         # Ensure all bills have the correct source
-        for bill in bills:
+        for bill in all_bills:
             bill['source'] = 'florida'
 
-        print(f"✅ Successfully fetched {len(bills)} Florida bills")
-        return bills[:limit]  # Ensure we don't exceed the limit
+        # Remove duplicates by bill_id (some bills appear multiple times)
+        seen_bills = {}
+        unique_bills = []
+        for bill in all_bills:
+            bill_id = bill.get('bill_id', '')
+            if bill_id not in seen_bills:
+                seen_bills[bill_id] = True
+                unique_bills.append(bill)
+
+        print(
+            f"🔍 Removed duplicates: {len(all_bills)} -> {len(unique_bills)} unique bills")
+
+        # Sort bills by bill number (newest first) and return the requested limit
+        # Assuming higher bill numbers are more recent
+        try:
+            sorted_bills = sorted(unique_bills, key=lambda x: int(
+                x.get('bill_id', '').split()[-1]), reverse=True)
+        except:
+            sorted_bills = unique_bills  # Fallback if sorting fails
+
+        # Return ALL active bills (sorted by bill number, newest first)
+        all_active_bills = sorted_bills
+
+        print(
+            f"✅ Successfully processed all bills, found {len(unique_bills)} unique active bills total")
+        print(
+            f"📋 Returning ALL {len(all_active_bills)} active bills (sorted by bill number)")
+
+        print(f"\n📋 Active Florida Bills Found:")
+        for i, bill in enumerate(all_active_bills, 1):
+            print(
+                f"   {i}. {bill.get('bill_number', 'N/A')}: {bill.get('title', 'N/A')[:50]}...")
+
+        return all_active_bills
 
     except Exception as e:
         print(f"❌ Failed to fetch Florida bills: {e}")

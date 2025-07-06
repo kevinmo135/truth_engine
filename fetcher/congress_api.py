@@ -114,6 +114,10 @@ class CongressAPI:
             last_action = latest_action.get('text', 'No action recorded')
             last_action_date = latest_action.get('actionDate', '')
 
+            # Format the bill number properly for display
+            formatted_bill_number = self._format_bill_number(
+                bill_type, bill_number)
+
             return {
                 'title': title,
                 'summary': bill_summary.get('summary', {}).get('text', f"Federal legislation {bill_type.upper()} {bill_number}"),
@@ -121,6 +125,7 @@ class CongressAPI:
                 'source_url': source_url,
                 'source': 'federal',
                 'bill_id': f"{bill_type}{bill_number}",
+                'bill_number': formatted_bill_number,  # Properly formatted number
                 'state': 'US',
                 'session': f"{congress}th Congress",
                 'status': last_action,
@@ -161,18 +166,48 @@ class CongressAPI:
         else:
             return f"{title} {name}"
 
+    def _format_bill_number(self, bill_type: str, bill_number: str) -> str:
+        """
+        Format bill number for proper display (e.g., H.R.618, S.1234)
+        """
+        bill_type_clean = bill_type.replace('.', '').lower()
 
-def fetch_recent_federal_bills(limit: int = 5) -> List[Dict]:
+        # Map bill types to proper display format
+        bill_type_map = {
+            'hr': 'H.R.',
+            's': 'S.',
+            'hjres': 'H.J.Res.',
+            'sjres': 'S.J.Res.',
+            'hconres': 'H.Con.Res.',
+            'sconres': 'S.Con.Res.',
+            'hres': 'H.Res.',
+            'sres': 'S.Res.'
+        }
+
+        formatted_type = bill_type_map.get(bill_type_clean, bill_type.upper())
+        return f"{formatted_type}{bill_number}"
+
+
+def fetch_recent_federal_bills(limit: int = 50) -> List[Dict]:
     """
     Fetch recent federal bills using Congress.gov API
+    Returns more bills than before (up to 50 recent bills)
     """
     print("🏛️ Fetching federal bills from Congress.gov...")
 
     try:
         api = CongressAPI()
-        bills = api.get_recent_bills(limit=limit)
+        # Get more bills to provide better coverage of recent legislation
+        bills = api.get_recent_bills(limit=50)  # Increased from 5 to 50
 
         print(f"✅ Successfully fetched {len(bills)} federal bills")
+        print(f"📋 Recent Federal Bills:")
+        for i, bill in enumerate(bills[:10], 1):  # Show first 10 in summary
+            print(
+                f"   {i}. {bill.get('bill_number', 'N/A')}: {bill.get('title', 'N/A')[:50]}...")
+        if len(bills) > 10:
+            print(f"   ... and {len(bills) - 10} more bills")
+
         return bills
 
     except Exception as e:

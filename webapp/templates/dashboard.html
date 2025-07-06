@@ -340,6 +340,24 @@
       box-shadow: 0 4px 12px rgba(30, 144, 255, 0.3);
     }
 
+    .bill-number {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #1E90FF;
+      background: linear-gradient(135deg, rgba(30, 144, 255, 0.1) 0%, rgba(70, 130, 180, 0.1) 100%);
+      border: 2px solid rgba(30, 144, 255, 0.3);
+      border-radius: 25px;
+      padding: 0.5rem 1.5rem;
+      margin: 0 auto 1rem auto;
+      display: inline-block;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 12px rgba(30, 144, 255, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
     .bill-title {
       font-family: 'Cinzel', serif;
       font-size: 1.8rem;
@@ -690,24 +708,6 @@
 
   <div class="container">
     <div class="content-area">
-      <div class="stats">
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-scroll"></i></div>
-          <div class="stat-number">{{ total_bills }}</div>
-          <div class="stat-label">Bills Analyzed</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
-          <div class="stat-number">{{ generated_at.split(' ')[0] }}</div>
-          <div class="stat-label">Last Updated</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-clock"></i></div>
-          <div class="stat-number">{{ generated_at.split(' ')[1] if ' ' in generated_at else 'N/A' }}</div>
-          <div class="stat-label">Time Generated</div>
-        </div>
-      </div>
-
       <!-- Tab Navigation -->
       <div class="bill-tabs">
         <button class="tab-button active" onclick="showTab('federal')">
@@ -728,6 +728,7 @@
               <div class="bill-type-badge">
                 <i class="fas fa-flag-usa"></i> Federal
               </div>
+              <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
               <h2 class="bill-title">{{ bill.title }}</h2>
               <p class="bill-sponsor">
                 <i class="fas fa-user-tie"></i>
@@ -825,6 +826,7 @@
               <div class="bill-type-badge">
                 <i class="fas fa-map-marker-alt"></i> State
               </div>
+              <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
               <h2 class="bill-title">{{ bill.title }}</h2>
               <p class="bill-sponsor">
                 <i class="fas fa-user-tie"></i>
@@ -909,6 +911,25 @@
           </div>
           {% endif %}
           {% endfor %}
+        </div>
+      </div>
+
+      <!-- Statistics moved to bottom -->
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-scroll"></i></div>
+          <div class="stat-number">{{ total_bills }}</div>
+          <div class="stat-label">Bills Analyzed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+          <div class="stat-number">{{ generated_at.split(' ')[0] }}</div>
+          <div class="stat-label">Last Updated</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-clock"></i></div>
+          <div class="stat-number">{{ generated_at.split(' ')[1] if ' ' in generated_at else 'N/A' }}</div>
+          <div class="stat-label">Time Generated</div>
         </div>
       </div>
     </div>
