@@ -24,9 +24,9 @@ class FloridaBillScraper:
             'Connection': 'keep-alive',
         })
 
-    def scrape_florida_bills_from_house_site(self, limit: int = 5) -> List[Dict]:
+    def scrape_florida_bills_from_house_site(self) -> List[Dict]:
         """
-        Scrape Florida bills from Florida House website
+        Scrape ALL Florida bills from Florida House website
         (flhouse.gov has both House and Senate bills)
         """
         bills = []
@@ -633,8 +633,8 @@ def fetch_recent_florida_bills(limit: int = None) -> List[Dict]:
 
         # Get ALL Florida bills from the house site (includes both House and Senate)
         # Process all bills to find the best active ones
-        all_bills = scraper.scrape_florida_bills_from_house_site(
-            limit=999)  # Get all active bills
+        # Get all active bills (no limit)
+        all_bills = scraper.scrape_florida_bills_from_house_site()
 
         # Ensure all bills have the correct source
         for bill in all_bills:

@@ -3,8 +3,11 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Truth Engine - Legislative Analysis Dashboard</title>
+  <meta name="description"
+    content="AI-powered legislative analysis dashboard providing transparent insights into federal and state bills">
+  <meta name="theme-color" content="#1E90FF">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link
     href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Merriweather:wght@300;400;700&family=Open+Sans:wght@300;400;600;700&display=swap"
@@ -294,18 +297,20 @@
 
     .bill-frame {
       background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(15px);
       border-radius: 25px;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-      border: 3px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border: 2px solid rgba(30, 144, 255, 0.2);
       overflow: hidden;
-      transition: all 0.4s ease;
       position: relative;
+      will-change: transform;
+      contain: layout style paint;
+      transform: translateZ(0);
     }
 
     .bill-frame:hover {
-      transform: translateY(-10px);
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+      transform: translateY(-3px) translateZ(0);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
     .bill-frame::before {
@@ -325,10 +330,17 @@
       position: relative;
     }
 
-    .bill-type-badge {
+    .bill-badges {
       position: absolute;
       top: 1.5rem;
       right: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 2;
+    }
+
+    .bill-type-badge {
       background: linear-gradient(135deg, #1E90FF 0%, #4682B4 100%);
       color: white;
       padding: 0.75rem 1.25rem;
@@ -338,6 +350,165 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       box-shadow: 0 4px 12px rgba(30, 144, 255, 0.3);
+    }
+
+    .popularity-badge {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+      color: #1e293b;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      box-shadow: 0 3px 10px rgba(255, 215, 0, 0.4);
+      text-align: center;
+      will-change: transform;
+    }
+
+    .popularity-badge i {
+      margin-right: 0.25rem;
+      color: #b45309;
+    }
+
+    .popularity-badge:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(255, 215, 0, 0.6);
+      transition: all 0.2s ease;
+    }
+
+    /* Scroll performance optimizations */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: none;
+    }
+
+    .bills-container {
+      contain: layout style paint;
+    }
+
+    /* Additional performance optimizations for large lists */
+    .bill-frame {
+      content-visibility: auto;
+      contain-intrinsic-size: 500px;
+    }
+
+    .status-section {
+      contain: layout style;
+    }
+
+    /* Disable expensive CSS features on large lists */
+    @media (min-width: 768px) {
+      .content-area {
+        transform: translateZ(0);
+        backface-visibility: hidden;
+      }
+    }
+
+    /* Load More Button */
+    .load-more-container {
+      text-align: center;
+      margin: 3rem 0;
+      padding: 2rem;
+    }
+
+    .load-more-button {
+      background: linear-gradient(135deg, #1E90FF 0%, #4682B4 100%);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0 auto;
+      box-shadow: 0 4px 15px rgba(30, 144, 255, 0.3);
+      font-family: 'Open Sans', sans-serif;
+      min-width: 200px;
+      justify-content: center;
+    }
+
+    .load-more-button:hover {
+      background: linear-gradient(135deg, #4682B4 0%, #1E90FF 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(30, 144, 255, 0.4);
+    }
+
+    .load-more-button:active {
+      transform: translateY(0);
+    }
+
+    .load-more-button:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .load-more-info {
+      margin-top: 1rem;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    @keyframes spinload {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spinner {
+      animation: spinload 1s linear infinite;
+    }
+
+    /* Mobile-specific optimizations when JavaScript detects mobile */
+    body.mobile-device {
+      /* Disable text selection for better touch experience */
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+
+      /* Optimize touch scrolling */
+      -webkit-overflow-scrolling: touch;
+      overflow-scrolling: touch;
+    }
+
+    body.mobile-device .bill-title,
+    body.mobile-device .bill-summary,
+    body.mobile-device .analysis-points {
+      /* Allow text selection for reading */
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
+
+    body.mobile-device .action-button {
+      /* Enhanced touch targets */
+      min-height: 44px;
+      transition: transform 0.1s ease;
+    }
+
+    body.mobile-device .tab-button:active,
+    body.mobile-device .load-more-button:active {
+      transform: scale(0.95);
+    }
+
+    body.mobile-device .search-box {
+      /* Prevent zoom on iOS when focusing inputs */
+      transform: translateZ(0);
     }
 
     .bill-number {
@@ -623,6 +794,20 @@
       box-shadow: 0 6px 20px rgba(30, 144, 255, 0.4);
     }
 
+    .analytics-link {
+      text-decoration: none;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: white;
+      border-color: #22c55e;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+    }
+
+    .analytics-link:hover {
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+      color: white;
+      box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+    }
+
     .tab-content {
       display: none;
     }
@@ -776,6 +961,689 @@
       font-size: 1.1rem;
       margin: 0;
     }
+
+    /* Search and Filter Controls */
+    .search-filter-controls {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 2rem;
+      margin: 2rem 0;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(30, 144, 255, 0.2);
+    }
+
+    .search-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-box:focus-within {
+      border-color: #1E90FF;
+      box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.1);
+    }
+
+    .search-box i {
+      color: #64748b;
+      margin-right: 0.75rem;
+      font-size: 1.1rem;
+    }
+
+    .search-box input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      color: #334155;
+      font-family: 'Open Sans', sans-serif;
+    }
+
+    .search-box input::placeholder {
+      color: #94a3b8;
+    }
+
+    .search-box button {
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      margin-left: 0.5rem;
+    }
+
+    .search-box button:hover {
+      background: #f1f5f9;
+      color: #334155;
+    }
+
+    .filter-section {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filter-group label {
+      font-family: 'Open Sans', sans-serif;
+      font-weight: 600;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+    }
+
+    .filter-group label i {
+      color: #1E90FF;
+    }
+
+    .filter-group select {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.95rem;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 120px;
+    }
+
+    .filter-group select:focus {
+      border-color: #1E90FF;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.1);
+    }
+
+    .clear-filters {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-left: auto;
+    }
+
+    .clear-filters:hover {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    }
+
+    .results-info {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+    }
+
+    .results-info span {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.95rem;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .bill-frame.hidden {
+      display: none;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: #64748b;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      margin: 2rem 0;
+    }
+
+    .no-results i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #cbd5e1;
+    }
+
+    .no-results h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: #334155;
+    }
+
+    .no-results p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    /* Search Keywords Help */
+    .search-keywords-help {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 248, 255, 0.95));
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      border: 1px solid rgba(30, 144, 255, 0.2);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .keywords-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      font-family: 'Merriweather', serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1E90FF;
+    }
+
+    .keywords-header i {
+      font-size: 1.2rem;
+      color: #FFD700;
+    }
+
+    .keywords-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    .keywords-category {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .category-title {
+      font-family: 'Open Sans', sans-serif;
+      font-weight: 700;
+      color: #334155;
+      font-size: 0.9rem;
+    }
+
+    .keywords {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.85rem;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    /* AI Disclaimer */
+    .ai-disclaimer {
+      background: linear-gradient(135deg, rgba(30, 144, 255, 0.95), rgba(70, 130, 180, 0.95));
+      backdrop-filter: blur(10px);
+      border-top: 3px solid rgba(255, 255, 255, 0.3);
+      margin-top: 4rem;
+      padding: 2.5rem 0;
+      color: white;
+    }
+
+    .disclaimer-content {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .disclaimer-icon {
+      flex-shrink: 0;
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+
+    .disclaimer-icon i {
+      font-size: 1.8rem;
+      color: #FFD700;
+    }
+
+    .disclaimer-text {
+      flex: 1;
+    }
+
+    .disclaimer-text h4 {
+      font-family: 'Merriweather', serif;
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: #FFD700;
+      font-weight: 700;
+    }
+
+    .disclaimer-text p {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .disclaimer-note {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 0 !important;
+    }
+
+    .disclaimer-text a {
+      color: #FFD700;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    .disclaimer-text a:hover {
+      color: #FFA500;
+      text-decoration: underline;
+    }
+
+    /* Comprehensive Mobile Optimizations */
+    @media (max-width: 768px) {
+
+      /* Header adjustments */
+      .header {
+        padding: 2rem 0;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .truth-logo {
+        width: 50px;
+        height: 50px;
+      }
+
+      .truth-logo i {
+        font-size: 1.5rem;
+      }
+
+      .header p {
+        font-size: 1rem;
+      }
+
+      /* Container adjustments */
+      .container {
+        padding: 0 0.5rem;
+      }
+
+      .content-area {
+        margin: 1rem 0;
+        padding: 1.5rem;
+        border-radius: 15px;
+      }
+
+      /* Statistics cards - single column */
+      .stats {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin: 1.5rem 0;
+      }
+
+      .stat-card {
+        padding: 1.5rem;
+        border-radius: 15px;
+      }
+
+      .stat-icon {
+        font-size: 2rem;
+      }
+
+      .stat-number {
+        font-size: 2rem;
+      }
+
+      /* Tab controls */
+      .bill-tabs {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .tab-button {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        border-radius: 10px;
+        width: 100%;
+        text-align: center;
+      }
+
+      /* Search and filters - mobile layout */
+      .search-filter-controls {
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+
+      .search-box input {
+        font-size: 16px;
+        /* Prevents zoom on iOS */
+      }
+
+      .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+      }
+
+      .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+      }
+
+      .filter-group select {
+        min-width: auto;
+        font-size: 16px;
+        /* Prevents zoom on iOS */
+      }
+
+      .clear-filters {
+        margin-left: 0;
+        justify-content: center;
+      }
+
+      /* Search keywords help */
+      .keywords-content {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+
+      .search-keywords-help {
+        padding: 1rem;
+      }
+
+      .keywords-category {
+        text-align: left;
+      }
+
+      .category-title {
+        margin-bottom: 0.25rem;
+        display: block;
+      }
+
+      /* Bill frames - mobile optimized */
+      .bills-container {
+        gap: 1.5rem;
+      }
+
+      .bill-frame {
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      }
+
+      .bill-header {
+        padding: 1.5rem 1rem;
+        border-radius: 15px 15px 0 0;
+      }
+
+      .bill-badges {
+        position: relative;
+        top: auto;
+        right: auto;
+        flex-direction: row;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        justify-content: flex-start;
+      }
+
+      .bill-type-badge {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+        border-radius: 20px;
+      }
+
+      .popularity-badge {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.7rem;
+        border-radius: 15px;
+      }
+
+      .bill-number {
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .bill-title {
+        font-size: 1.3rem;
+        line-height: 1.4;
+        margin-bottom: 0.75rem;
+      }
+
+      .bill-sponsor {
+        font-size: 0.9rem;
+      }
+
+      .bill-content {
+        padding: 1rem;
+      }
+
+      .bill-summary {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+      }
+
+      /* Impact section - simplified for mobile */
+      .impact-section {
+        margin: 1rem 0;
+      }
+
+      .impact-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .impact-card {
+        padding: 1rem;
+        border-radius: 10px;
+      }
+
+      .impact-card h4 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .impact-list {
+        font-size: 0.85rem;
+      }
+
+      .impact-list li {
+        margin-bottom: 0.5rem;
+      }
+
+      /* Analysis outline - simplified */
+      .analysis-outline {
+        margin: 1rem 0;
+        padding: 1rem;
+        border-radius: 10px;
+      }
+
+      .analysis-outline h3 {
+        font-size: 1.1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .analysis-points {
+        font-size: 0.85rem;
+      }
+
+      .analysis-points li {
+        margin-bottom: 0.75rem;
+      }
+
+      /* Action buttons - mobile layout */
+      .action-buttons {
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
+      .action-button {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 10px;
+        text-align: center;
+        width: 100%;
+      }
+
+      /* Section headers */
+      .section-header {
+        padding: 1rem;
+        border-radius: 10px;
+      }
+
+      .section-header h3 {
+        font-size: 1.2rem;
+      }
+
+      /* Load more button */
+      .load-more-container {
+        margin: 2rem 0;
+        padding: 1rem;
+      }
+
+      .load-more-button {
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+        width: 100%;
+      }
+
+      /* AI Disclaimer */
+      .ai-disclaimer {
+        padding: 2rem 0;
+      }
+
+      .disclaimer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+        padding: 1.5rem;
+      }
+
+      .disclaimer-icon {
+        align-self: center;
+      }
+
+      .disclaimer-text h4 {
+        font-size: 1.1rem;
+      }
+
+      .disclaimer-text p {
+        font-size: 0.9rem;
+      }
+
+      /* Footer */
+      .footer {
+        padding: 1rem 0;
+      }
+
+      .footer p {
+        font-size: 0.9rem;
+      }
+
+      /* No results message */
+      .no-results {
+        padding: 2rem 1rem;
+      }
+
+      .no-results h3 {
+        font-size: 1.3rem;
+      }
+
+      .no-results p {
+        font-size: 1rem;
+      }
+    }
+
+    /* Extra small mobile devices */
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .content-area {
+        padding: 1rem;
+        margin: 0.5rem 0;
+      }
+
+      .bill-header {
+        padding: 1rem;
+      }
+
+      .bill-title {
+        font-size: 1.2rem;
+      }
+
+      .bill-content {
+        padding: 0.75rem;
+      }
+
+      .stat-card {
+        padding: 1rem;
+      }
+
+      .stat-number {
+        font-size: 1.8rem;
+      }
+
+      .bill-badges {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .search-filter-controls {
+        padding: 0.75rem;
+      }
+
+      .tab-button {
+        font-size: 0.9rem;
+        padding: 0.6rem 0.8rem;
+      }
+
+      .action-button {
+        font-size: 0.85rem;
+        padding: 0.6rem 0.8rem;
+      }
+
+      .load-more-button {
+        font-size: 0.9rem;
+        padding: 0.6rem 1rem;
+      }
+    }
   </style>
 </head>
 
@@ -808,6 +1676,92 @@
         <button class="tab-button" onclick="showTab('state')">
           <i class="fas fa-map-marker-alt"></i> State Bills
         </button>
+        <a href="/analytics" class="tab-button analytics-link">
+          <i class="fas fa-chart-line"></i> Analytics
+        </a>
+      </div>
+
+      <!-- Search and Filter Controls -->
+      <div class="search-filter-controls">
+        <div class="search-section">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search bills by title, sponsor, or content..."
+              onkeyup="filterBills()" autocomplete="off">
+            <button id="clearSearch" onclick="clearSearch()" style="display: none;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <div class="filter-group">
+            <label for="statusFilter">
+              <i class="fas fa-filter"></i> Status:
+            </label>
+            <select id="statusFilter" onchange="filterBills()">
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="passed">Passed</option>
+              <option value="failed">Failed</option>
+              <option value="withdrawn">Withdrawn</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="chamberFilter">
+              <i class="fas fa-building"></i> Chamber:
+            </label>
+            <select id="chamberFilter" onchange="filterBills()">
+              <option value="">All Chambers</option>
+              <option value="house">House</option>
+              <option value="senate">Senate</option>
+            </select>
+          </div>
+
+          <button class="clear-filters" onclick="clearAllFilters()">
+            <i class="fas fa-eraser"></i> Clear Filters
+          </button>
+        </div>
+
+        <div class="results-info">
+          <span id="resultsCount">Showing all bills</span>
+        </div>
+      </div>
+
+      <!-- Search Keywords Help -->
+      <div class="search-keywords-help">
+        <div class="keywords-header">
+          <i class="fas fa-lightbulb"></i>
+          <span>Search Tips & Popular Keywords</span>
+        </div>
+        <div class="keywords-content">
+          <div class="keywords-category">
+            <span class="category-title">Healthcare:</span>
+            <span class="keywords">medicare, medicaid, insurance, prescription drugs, mental health, veterans
+              care</span>
+          </div>
+          <div class="keywords-category">
+            <span class="category-title">Economy:</span>
+            <span class="keywords">tax reform, budget, infrastructure, jobs, minimum wage, trade, deficit</span>
+          </div>
+          <div class="keywords-category">
+            <span class="category-title">Environment:</span>
+            <span class="keywords">climate change, renewable energy, pollution, water quality, conservation</span>
+          </div>
+          <div class="keywords-category">
+            <span class="category-title">Education:</span>
+            <span class="keywords">school funding, student loans, college tuition, teacher pay, literacy</span>
+          </div>
+          <div class="keywords-category">
+            <span class="category-title">Immigration:</span>
+            <span class="keywords">border security, visa reform, citizenship, asylum, deportation</span>
+          </div>
+          <div class="keywords-category">
+            <span class="category-title">Technology:</span>
+            <span class="keywords">data privacy, cybersecurity, artificial intelligence, broadband access</span>
+          </div>
+        </div>
       </div>
 
       <!-- Federal Bills Tab -->
@@ -828,8 +1782,18 @@
               {% for bill in active_federal + passed_federal + failed_federal %}
               <div class="bill-frame">
                 <div class="bill-header">
-                  <div class="bill-type-badge">
-                    <i class="fas fa-flag-usa"></i> Federal
+                  <div class="bill-badges">
+                    <div class="bill-type-badge">
+                      <i class="fas fa-flag-usa"></i> Federal
+                    </div>
+                    {% if bill._popularity_score %}
+                    <div class="popularity-badge" title="Popularity Score: {{ " %.1f"|format(bill._popularity_score)
+                      }}">
+                      <i class="fas fa-star"></i>
+                      {% if bill._popularity_score >= 50 %}Hot{% elif bill._popularity_score >= 35 %}Popular{% else
+                      %}Standard{% endif %}
+                    </div>
+                    {% endif %}
                   </div>
                   <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
                   <h2 class="bill-title">{{ bill.title }}</h2>
@@ -939,8 +1903,18 @@
               {% for bill in active_state %}
               <div class="bill-frame">
                 <div class="bill-header">
-                  <div class="bill-type-badge">
-                    <i class="fas fa-map-marker-alt"></i> State
+                  <div class="bill-badges">
+                    <div class="bill-type-badge">
+                      <i class="fas fa-map-marker-alt"></i> State
+                    </div>
+                    {% if bill._popularity_score %}
+                    <div class="popularity-badge" title="Popularity Score: {{ " %.1f"|format(bill._popularity_score)
+                      }}">
+                      <i class="fas fa-star"></i>
+                      {% if bill._popularity_score >= 50 %}Hot{% elif bill._popularity_score >= 35 %}Popular{% else
+                      %}Standard{% endif %}
+                    </div>
+                    {% endif %}
                   </div>
                   <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
                   <h2 class="bill-title">{{ bill.title }}</h2>
@@ -1047,8 +2021,18 @@
               {% for bill in passed_state %}
               <div class="bill-frame">
                 <div class="bill-header">
-                  <div class="bill-type-badge">
-                    <i class="fas fa-map-marker-alt"></i> State (Passed)
+                  <div class="bill-badges">
+                    <div class="bill-type-badge">
+                      <i class="fas fa-map-marker-alt"></i> State (Passed)
+                    </div>
+                    {% if bill._popularity_score %}
+                    <div class="popularity-badge" title="Popularity Score: {{ " %.1f"|format(bill._popularity_score)
+                      }}">
+                      <i class="fas fa-star"></i>
+                      {% if bill._popularity_score >= 50 %}Hot{% elif bill._popularity_score >= 35 %}Popular{% else
+                      %}Standard{% endif %}
+                    </div>
+                    {% endif %}
                   </div>
                   <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
                   <h2 class="bill-title">{{ bill.title }}</h2>
@@ -1097,70 +2081,20 @@
           </div>
         </div>
 
-        <!-- Recently Failed State Bills Section -->
-        <div class="status-section">
-          <div class="section-header failed-header collapsed" onclick="toggleSection('state-failed')">
-            <h3>
-              <i class="fas fa-times-circle"></i>
-              Recently Failed State Bills
-              <span class="bill-count">({{ failed_state|length }})</span>
-            </h3>
-            <i class="fas fa-chevron-right toggle-icon"></i>
-          </div>
-          <div id="state-failed" class="section-content">
-            {% if failed_state %}
-            <div class="bills-container">
-              {% for bill in failed_state %}
-              <div class="bill-frame">
-                <div class="bill-header">
-                  <div class="bill-type-badge">
-                    <i class="fas fa-map-marker-alt"></i> State (Failed)
-                  </div>
-                  <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
-                  <h2 class="bill-title">{{ bill.title }}</h2>
-                  <p class="bill-sponsor">
-                    <i class="fas fa-user-tie"></i>
-                    Sponsored by {{ bill.sponsor }}
-                  </p>
-                </div>
 
-                <div class="bill-content">
-                  <div class="bill-summary">
-                    {{ bill.parsed.plain_summary if bill.parsed.plain_summary else bill.original_summary[:400] + '...'
-                    }}
-                  </div>
+      </div>
 
-                  <div class="action-buttons">
-                    <a href="/bill/{{ bill.bill_id }}" class="action-button view-details">
-                      <i class="fas fa-microscope"></i>
-                      Deep Analysis
-                    </a>
-
-                    {% if bill.get('source_url') %}
-                    <a href="{{ bill.source_url }}" target="_blank" class="action-button source-link">
-                      <i class="fas fa-external-link-alt"></i>
-                      Official Source
-                    </a>
-                    {% endif %}
-
-                    <a href="javascript:void(0)"
-                      onclick="openChatGPT('{{ bill.title }}', '{{ bill.original_summary[:300] }}')"
-                      class="action-button chatgpt-link">
-                      <i class="fas fa-robot"></i>
-                      Ask AI
-                    </a>
-                  </div>
-                </div>
-              </div>
-              {% endfor %}
-            </div>
-            {% else %}
-            <div class="no-bills">
-              <i class="fas fa-info-circle"></i>
-              <p>No recently failed state bills in the last 30 days.</p>
-            </div>
-            {% endif %}
-          </div>
+      <!-- Load More Button -->
+      <div class="load-more-container" id="loadMoreContainer">
+        <button class="load-more-button" onclick="loadMoreBills()">
+          <i class="fas fa-plus-circle"></i>
+          <span id="loadMoreText">Load More Bills</span>
+          <span id="loadMoreSpinner" class="spinner" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i>
+          </span>
+        </button>
+        <div class="load-more-info">
+          <span id="loadMoreInfo">Click to load the next 100 bills</span>
         </div>
       </div>
 
@@ -1264,26 +2198,443 @@ What questions do you have about this bill?`;
       }, 50);
     }
 
-    // Add some interactive animations
+    // Mobile detection and optimization
+    function isMobileDevice() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        window.innerWidth <= 768;
+    }
+
+    function optimizeForMobile() {
+      if (isMobileDevice()) {
+        // Add mobile-specific class to body
+        document.body.classList.add('mobile-device');
+
+        // Reduce initial bill count for mobile
+        const currentBillCount = document.querySelectorAll('.bill-frame').length;
+        if (currentBillCount > 50) {
+          // Hide bills beyond the first 50 on mobile
+          const billFrames = document.querySelectorAll('.bill-frame');
+          Array.from(billFrames).slice(50).forEach(frame => {
+            frame.style.display = 'none';
+          });
+
+          // Update results count
+          updateResultsCount(50, currentBillCount);
+
+          // Show load more button earlier
+          const loadMoreContainer = document.getElementById('loadMoreContainer');
+          if (loadMoreContainer) {
+            loadMoreContainer.style.display = 'block';
+            document.getElementById('loadMoreInfo').textContent = `${currentBillCount - 50} more bills available`;
+          }
+        }
+
+        // Add touch event handlers for better mobile interaction
+        document.querySelectorAll('.action-button').forEach(button => {
+          button.addEventListener('touchstart', function () {
+            this.style.transform = 'scale(0.95)';
+          });
+
+          button.addEventListener('touchend', function () {
+            this.style.transform = 'scale(1)';
+          });
+        });
+
+        // Optimize search input for mobile
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+          searchInput.setAttribute('autocomplete', 'off');
+          searchInput.setAttribute('autocorrect', 'off');
+          searchInput.setAttribute('autocapitalize', 'off');
+          searchInput.setAttribute('spellcheck', 'false');
+        }
+
+        console.log('Mobile optimizations applied');
+      }
+    }
+
+    // Simple initialization without scroll animations
     document.addEventListener('DOMContentLoaded', function () {
-      // Animate bill frames on scroll
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
+      // Apply mobile optimizations
+      optimizeForMobile();
+
+      // Just ensure all bills are visible immediately
+      console.log('Truth Engine loaded with', document.querySelectorAll('.bill-frame').length, 'bills');
+    });
+
+    // Optimized Search and Filter Functionality
+    let filterTimeout;
+    function filterBills() {
+      // Debounce filtering for better performance
+      clearTimeout(filterTimeout);
+      filterTimeout = setTimeout(() => {
+        performFilter();
+      }, 150);
+    }
+
+    function performFilter() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+      const chamberFilter = document.getElementById('chamberFilter').value.toLowerCase();
+
+      const clearButton = document.getElementById('clearSearch');
+      clearButton.style.display = searchTerm ? 'block' : 'none';
+
+      let visibleCount = 0;
+      let totalCount = 0;
+
+      // Use DocumentFragment for better performance
+      const frames = document.querySelectorAll('.bill-frame');
+
+      // Batch DOM updates
+      requestAnimationFrame(() => {
+        frames.forEach(frame => {
+          totalCount++;
+
+          // Get cached bill data (avoid repeated DOM queries)
+          if (!frame._billData) {
+            frame._billData = {
+              title: frame.querySelector('.bill-title').textContent.toLowerCase(),
+              sponsor: frame.querySelector('.bill-sponsor').textContent.toLowerCase(),
+              summary: frame.querySelector('.bill-summary').textContent.toLowerCase(),
+              billTypeText: frame.querySelector('.bill-type-badge').textContent.toLowerCase(),
+              billNumber: frame.querySelector('.bill-number').textContent.toLowerCase()
+            };
+          }
+
+          const data = frame._billData;
+          const billText = data.title + ' ' + data.sponsor + ' ' + data.summary;
+
+          // Determine status from badge or section
+          let billStatus = 'active';
+          if (data.billTypeText.includes('passed')) {
+            billStatus = 'passed';
+          } else if (data.billTypeText.includes('failed')) {
+            billStatus = 'failed';
+          } else if (data.billTypeText.includes('withdrawn')) {
+            billStatus = 'withdrawn';
+          }
+
+          // Determine chamber from bill number or title
+          let billChamber = '';
+          if (data.billNumber.includes('hr') || data.billNumber.includes('h.r.') || data.billNumber.includes('hb') || data.title.includes('house')) {
+            billChamber = 'house';
+          } else if (data.billNumber.includes('s.') || data.billNumber.includes('sb') || data.title.includes('senate')) {
+            billChamber = 'senate';
+          }
+
+          // Apply filters
+          const matchesSearch = !searchTerm || billText.includes(searchTerm);
+          const matchesStatus = !statusFilter || billStatus === statusFilter;
+          const matchesChamber = !chamberFilter || billChamber === chamberFilter;
+
+          // Show/hide frame
+          if (matchesSearch && matchesStatus && matchesChamber) {
+            frame.classList.remove('hidden');
+            visibleCount++;
+          } else {
+            frame.classList.add('hidden');
           }
         });
+
+        // Update results count
+        updateResultsCount(visibleCount, totalCount);
+
+        // Update section visibility and counts
+        updateSectionVisibility();
+
+        // Show/hide no results message
+        updateNoResultsMessage(visibleCount);
+      });
+    }
+
+    function updateResultsCount(visible, total) {
+      const resultsSpan = document.getElementById('resultsCount');
+      if (visible === total) {
+        resultsSpan.textContent = `Showing all ${total} bills`;
+      } else {
+        resultsSpan.textContent = `Showing ${visible} of ${total} bills`;
+      }
+    }
+
+    function updateSectionVisibility() {
+      document.querySelectorAll('.status-section').forEach(section => {
+        const visibleBills = section.querySelectorAll('.bill-frame:not(.hidden)');
+        const totalBills = section.querySelectorAll('.bill-frame');
+        const billCountSpan = section.querySelector('.bill-count');
+
+        if (billCountSpan) {
+          billCountSpan.textContent = `(${visibleBills.length})`;
+        }
+
+        // Hide section if no visible bills
+        if (visibleBills.length === 0) {
+          section.style.display = 'none';
+        } else {
+          section.style.display = 'block';
+        }
+      });
+    }
+
+    function updateNoResultsMessage(visibleCount) {
+      // Remove existing no results message
+      const existingMessage = document.querySelector('.no-results-search');
+      if (existingMessage) {
+        existingMessage.remove();
+      }
+
+      // Add no results message if needed
+      if (visibleCount === 0) {
+        const message = document.createElement('div');
+        message.className = 'no-results no-results-search';
+        message.innerHTML = `
+          <i class="fas fa-search"></i>
+          <h3>No Bills Found</h3>
+          <p>No bills match your current search and filter criteria. Try adjusting your filters or search term.</p>
+        `;
+
+        // Insert after search controls
+        const searchControls = document.querySelector('.search-filter-controls');
+        searchControls.insertAdjacentElement('afterend', message);
+      }
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearch').style.display = 'none';
+      filterBills();
+    }
+
+    function clearAllFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('statusFilter').value = '';
+      document.getElementById('chamberFilter').value = '';
+      document.getElementById('clearSearch').style.display = 'none';
+      filterBills();
+    }
+
+    // Initialize filter system
+    document.addEventListener('DOMContentLoaded', function () {
+      // Set initial results count
+      const totalBills = document.querySelectorAll('.bill-frame').length;
+      document.getElementById('resultsCount').textContent = `Showing all ${totalBills} bills`;
+
+      // Add keyboard shortcut for search (Ctrl+F or Cmd+F)
+      document.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+          e.preventDefault();
+          document.getElementById('searchInput').focus();
+        }
       });
 
-      document.querySelectorAll('.bill-frame').forEach(frame => {
-        frame.style.opacity = '0';
-        frame.style.transform = 'translateY(50px)';
-        frame.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(frame);
-      });
+      // Initialize pagination
+      initializePagination();
     });
+
+    // Pagination functionality
+    let isLoading = false;
+    const totalBillsCount = parseInt('{{ total_bills }}');
+    let currentOffset = 0;
+
+    function initializePagination() {
+      // Update initial count and set offset to number of bills already shown
+      const initialBillsShown = document.querySelectorAll('.bill-frame').length;
+      currentOffset = initialBillsShown;
+      updateLoadMoreButton(initialBillsShown);
+    }
+
+    async function loadMoreBills() {
+      if (isLoading) return;
+
+      isLoading = true;
+      const button = document.querySelector('.load-more-button');
+      const text = document.getElementById('loadMoreText');
+      const spinner = document.getElementById('loadMoreSpinner');
+      const info = document.getElementById('loadMoreInfo');
+
+      // Show loading state
+      button.disabled = true;
+      text.style.display = 'none';
+      spinner.style.display = 'inline-block';
+      info.textContent = 'Loading more bills...';
+
+      try {
+        const response = await fetch(`/api/bills?offset=${currentOffset}&limit=100`);
+        const data = await response.json();
+
+        if (data.bills && data.bills.length > 0) {
+          // Add new bills to the DOM
+          appendBillsToDOM(data.bills);
+
+          // Update offset for next load
+          currentOffset += data.bills.length;
+
+          // Update results count
+          const totalBillsNow = document.querySelectorAll('.bill-frame').length;
+          updateResultsCount(totalBillsNow, totalBillsCount);
+
+          // Update load more button
+          updateLoadMoreButton(totalBillsNow);
+
+          // Re-apply current filters to new bills
+          if (document.getElementById('searchInput').value ||
+            document.getElementById('statusFilter').value ||
+            document.getElementById('chamberFilter').value) {
+            performFilter();
+          }
+        } else {
+          // No more bills
+          hideLoadMoreButton();
+        }
+
+      } catch (error) {
+        console.error('Error loading more bills:', error);
+        info.textContent = 'Error loading bills. Please try again.';
+      } finally {
+        isLoading = false;
+        button.disabled = false;
+        text.style.display = 'inline-block';
+        spinner.style.display = 'none';
+      }
+    }
+
+    function appendBillsToDOM(bills) {
+      bills.forEach(bill => {
+        const billHtml = createBillHtml(bill);
+
+        // Determine which section to add the bill to
+        const source = bill.source?.toLowerCase() || '';
+        const status = bill.status?.toLowerCase() || '';
+        const isFederal = (source === 'federal' || source.includes('congress'));
+
+        let targetContainer;
+
+        if (isFederal) {
+          if (status.includes('passed') || status.includes('signed') || status.includes('enacted')) {
+            targetContainer = document.querySelector('#federal-tab .bills-container');
+          } else if (status.includes('failed') || status.includes('defeated')) {
+            targetContainer = document.querySelector('#federal-tab .bills-container');
+          } else {
+            targetContainer = document.querySelector('#federal-tab .bills-container');
+          }
+        } else {
+          if (status.includes('passed') || status.includes('signed') || status.includes('enacted')) {
+            targetContainer = document.querySelector('#state-tab .bills-container');
+          } else {
+            targetContainer = document.querySelector('#state-tab .bills-container');
+          }
+        }
+
+        if (targetContainer) {
+          targetContainer.insertAdjacentHTML('beforeend', billHtml);
+        }
+      });
+    }
+
+    function createBillHtml(bill) {
+      const source = bill.source?.toLowerCase() || '';
+      const isFederal = (source === 'federal' || source.includes('congress'));
+      const badgeText = isFederal ? 'Federal' : 'State';
+      const badgeIcon = isFederal ? 'fas fa-flag-usa' : 'fas fa-map-marker-alt';
+
+      let popularityBadge = '';
+      if (bill._popularity_score) {
+        const score = bill._popularity_score;
+        const level = score >= 50 ? 'Hot' : score >= 35 ? 'Popular' : 'Standard';
+        popularityBadge = `
+          <div class="popularity-badge" title="Popularity Score: ${score.toFixed(1)}">
+            <i class="fas fa-star"></i>
+            ${level}
+          </div>
+        `;
+      }
+
+      return `
+        <div class="bill-frame">
+          <div class="bill-header">
+            <div class="bill-badges">
+              <div class="bill-type-badge">
+                <i class="${badgeIcon}"></i> ${badgeText}
+              </div>
+              ${popularityBadge}
+            </div>
+            <div class="bill-number">${bill.bill_number || bill.bill_id || 'N/A'}</div>
+            <h2 class="bill-title">${bill.title}</h2>
+            <p class="bill-sponsor">
+              <i class="fas fa-user-tie"></i>
+              Sponsored by ${bill.sponsor}
+            </p>
+          </div>
+          <div class="bill-content">
+            <div class="bill-summary">
+              ${bill.parsed?.plain_summary || bill.original_summary?.substring(0, 400) + '...' || ''}
+            </div>
+            <div class="action-buttons">
+              <a href="/bill/${bill.bill_id}" class="action-button view-details">
+                <i class="fas fa-microscope"></i>
+                Deep Analysis
+              </a>
+              ${bill.source_url ? `
+                <a href="${bill.source_url}" target="_blank" class="action-button source-link">
+                  <i class="fas fa-external-link-alt"></i>
+                  Official Source
+                </a>
+              ` : ''}
+              <a href="javascript:void(0)" onclick="openChatGPT('${bill.title.replace(/'/g, "\\'")}', '${(bill.original_summary || '').substring(0, 300).replace(/'/g, "\\\'")}')" class="action-button chatgpt-link">
+                <i class="fas fa-robot"></i>
+                Ask AI
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateLoadMoreButton(billsShown) {
+      const container = document.getElementById('loadMoreContainer');
+      const info = document.getElementById('loadMoreInfo');
+
+      if (billsShown >= totalBillsCount) {
+        hideLoadMoreButton();
+      } else {
+        const remaining = totalBillsCount - billsShown;
+        info.textContent = `${remaining} more bills available`;
+        container.style.display = 'block';
+      }
+    }
+
+    function hideLoadMoreButton() {
+      const container = document.getElementById('loadMoreContainer');
+      container.style.display = 'none';
+    }
   </script>
+
+  <!-- AI Disclaimer -->
+  <div class="ai-disclaimer">
+    <div class="container">
+      <div class="disclaimer-content">
+        <div class="disclaimer-icon">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="disclaimer-text">
+          <h4>AI-Generated Content Disclaimer</h4>
+          <p>
+            The bill summaries, analyses, and impact assessments presented on this platform are generated by OpenAI's
+            GPT-4o artificial intelligence model. While we strive for accuracy, this information is provided for
+            educational and informational purposes only. <strong>We strongly recommend conducting your own research
+              and consulting official government sources</strong> before making any decisions based on this content.
+            Legislative information can be complex and subject to frequent changes.
+          </p>
+          <p class="disclaimer-note">
+            For official bill text and status, please visit
+            <a href="https://www.congress.gov/" target="_blank">Congress.gov</a> for federal legislation
+            or your state's official legislative website.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

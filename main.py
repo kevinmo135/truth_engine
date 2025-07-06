@@ -36,7 +36,8 @@ def show_cache_stats():
 
 def generate_and_send_digest():
     print("📥 Fetching ALL federal and Florida bills...")
-    federal = fetch_recent_federal_bills()  # Gets up to 50 federal bills
+    # Gets ALL available federal bills (no limit)
+    federal = fetch_recent_federal_bills()
     florida = fetch_recent_florida_bills()  # Gets ALL active Florida bills
     all_bills = federal + florida
 
