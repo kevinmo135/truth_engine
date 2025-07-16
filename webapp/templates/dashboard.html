@@ -124,29 +124,7 @@
       }
     }
 
-    /* Intel Mac specific optimizations - detect via user agent in JS */
-    body.intel-mac .flag-video {
-      opacity: 0.6;
-      /* Reduce video opacity for better performance */
-    }
 
-    body.intel-mac .bill-frame {
-      /* Simplify shadows and effects for Intel Macs */
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-    }
-
-    body.intel-mac .content-area {
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05) !important;
-    }
-
-    /* Disable video entirely on very old Intel Macs for performance */
-    body.old-intel-mac .flag-video {
-      display: none !important;
-    }
-
-    body.old-intel-mac .flag-video-fallback {
-      display: block !important;
-    }
 
 
 
@@ -461,44 +439,7 @@
 
 
 
-    /* Mobile-specific optimizations when JavaScript detects mobile */
-    body.mobile-device {
-      /* Disable text selection for better touch experience */
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
 
-      /* Optimize touch scrolling */
-      -webkit-overflow-scrolling: touch;
-      overflow-scrolling: touch;
-    }
-
-    body.mobile-device .bill-title,
-    body.mobile-device .bill-summary,
-    body.mobile-device .analysis-points {
-      /* Allow text selection for reading */
-      -webkit-user-select: text;
-      -moz-user-select: text;
-      -ms-user-select: text;
-      user-select: text;
-    }
-
-    body.mobile-device .action-button {
-      /* Enhanced touch targets */
-      min-height: 44px;
-      transition: transform 0.1s ease;
-    }
-
-    body.mobile-device .tab-button:active,
-    body.mobile-device .load-more-button:active {
-      transform: scale(0.95);
-    }
-
-    body.mobile-device .search-box {
-      /* Prevent zoom on iOS when focusing inputs */
-      transform: translateZ(0);
-    }
 
     .bill-number {
       font-family: 'Open Sans', sans-serif;
@@ -2180,200 +2121,51 @@ What questions do you have about this bill?`;
       // Bills are now visible immediately without animations
     }
 
-    // Mobile detection and optimization
-    function isMobileDevice() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        window.innerWidth <= 768;
-    }
 
-    // Intel Mac detection for performance optimization
-    function isIntelMac() {
-      const ua = navigator.userAgent;
-      const platform = navigator.platform;
 
-      // Check if it's a Mac
-      const isMac = /Mac|Macintosh|MacIntel|MacPPC|Mac68K/i.test(platform) ||
-        /Macintosh/i.test(ua);
 
-      if (!isMac) return false;
 
-      // Check for Intel vs Apple Silicon indicators
-      // Intel Macs typically don't have the new M1/M2 identifiers
-      const hasAppleSilicon = /Mac.*ARM|Apple.*Silicon/i.test(ua);
 
-      return isMac && !hasAppleSilicon;
-    }
 
-    function isOldIntelMac() {
-      if (!isIntelMac()) return false;
-
-      // Detect older Intel Macs by checking for older macOS versions or hardware
-      const ua = navigator.userAgent;
-
-      // Check for older macOS versions or performance indicators
-      const hasOldMacOS = /Mac OS X 10_[0-9]_|Mac OS X 10_1[0-5]_/i.test(ua);
-      const lowMemory = navigator.deviceMemory && navigator.deviceMemory <= 4;
-      const lowCores = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2;
-
-      return hasOldMacOS || lowMemory || lowCores;
-    }
-
-    function optimizeForMobile() {
-      if (isMobileDevice()) {
-        // Add mobile-specific class to body
-        document.body.classList.add('mobile-device');
-
-        // Reduce initial bill count for mobile
-        const currentBillCount = document.querySelectorAll('.bill-frame').length;
-        if (currentBillCount > 50) {
-          // Hide bills beyond the first 50 on mobile
-          const billFrames = document.querySelectorAll('.bill-frame');
-          Array.from(billFrames).slice(50).forEach(frame => {
-            frame.style.display = 'none';
-          });
-
-          // Update results count
-          updateResultsCount(50, currentBillCount);
-
-          // Show load more button earlier
-          const loadMoreContainer = document.getElementById('loadMoreContainer');
-          if (loadMoreContainer) {
-            loadMoreContainer.style.display = 'block';
-            document.getElementById('loadMoreInfo').textContent = `${currentBillCount - 50} more bills available`;
-          }
-        }
-
-        // Add touch event handlers for better mobile interaction
-        document.querySelectorAll('.action-button').forEach(button => {
-          button.addEventListener('touchstart', function () {
-            this.style.transform = 'scale(0.95)';
-          });
-
-          button.addEventListener('touchend', function () {
-            this.style.transform = 'scale(1)';
-          });
-        });
-
-        // Optimize search input for mobile
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-          searchInput.setAttribute('autocomplete', 'off');
-          searchInput.setAttribute('autocorrect', 'off');
-          searchInput.setAttribute('autocapitalize', 'off');
-          searchInput.setAttribute('spellcheck', 'false');
-        }
-
-        console.log('Mobile optimizations applied');
-      }
-    }
-
-    // Intel Mac optimization for performance
-    function optimizeForIntelMac() {
-      if (isOldIntelMac()) {
-        // Very aggressive optimizations for old Intel Macs
-        document.body.classList.add('old-intel-mac');
-
-        // Severely limit DOM elements
-        const currentBillCount = document.querySelectorAll('.bill-frame').length;
-        if (currentBillCount > 20) {
-          const billFrames = document.querySelectorAll('.bill-frame');
-          Array.from(billFrames).slice(20).forEach(frame => {
-            frame.style.display = 'none';
-          });
-
-          updateResultsCount(20, currentBillCount);
-
-          const loadMoreContainer = document.getElementById('loadMoreContainer');
-          if (loadMoreContainer) {
-            loadMoreContainer.style.display = 'block';
-            document.getElementById('loadMoreInfo').textContent = `${currentBillCount - 20} more bills available (optimized for performance)`;
-          }
-        }
-
-        console.log('Old Intel Mac optimizations applied - performance mode');
-
-      } else if (isIntelMac()) {
-        // Moderate optimizations for newer Intel Macs
-        document.body.classList.add('intel-mac');
-
-        // Reduce DOM elements for better scrolling
-        const currentBillCount = document.querySelectorAll('.bill-frame').length;
-        if (currentBillCount > 40) {
-          const billFrames = document.querySelectorAll('.bill-frame');
-          Array.from(billFrames).slice(40).forEach(frame => {
-            frame.style.display = 'none';
-          });
-
-          updateResultsCount(40, currentBillCount);
-
-          const loadMoreContainer = document.getElementById('loadMoreContainer');
-          if (loadMoreContainer) {
-            loadMoreContainer.style.display = 'block';
-            document.getElementById('loadMoreInfo').textContent = `${currentBillCount - 40} more bills available`;
-          }
-        }
-
-        console.log('Intel Mac optimizations applied');
-      }
-    }
-
-    // Video background handling and optimization
+    // Video background handling
     function initializeVideoBackground() {
       const video = document.getElementById('flagVideo');
       const fallback = document.getElementById('flagFallback');
 
       if (!video) return;
 
-      // Handle video load errors
+      // Handle video load errors only
       video.addEventListener('error', function () {
         console.log('Video failed to load, showing fallback background');
         video.style.display = 'none';
         fallback.style.display = 'block';
       });
 
-      // Check for reduced motion preference
+      // Check for reduced motion preference (accessibility requirement)
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      // Optimize video settings based on device performance
-      if (prefersReducedMotion || isOldIntelMac()) {
-        // Disable video for reduced motion or very old Intel Macs
+      if (prefersReducedMotion) {
         video.style.display = 'none';
         fallback.style.display = 'block';
-        console.log('Video disabled for accessibility/performance');
-      } else if (isIntelMac()) {
-        // Reduce video quality/opacity for Intel Macs
-        video.style.opacity = '0.6';
-        // Pause and resume video based on page visibility for battery optimization
-        document.addEventListener('visibilitychange', function () {
-          if (document.hidden) {
-            video.pause();
-          } else {
-            video.play().catch(e => console.log('Video autoplay prevented'));
-          }
-        });
-        console.log('Video optimized for Intel Mac');
+        console.log('Video disabled for reduced motion preference');
+        return;
       }
 
       // Ensure video is muted for autoplay compliance
       video.muted = true;
 
-      // Try to play video (required for some browsers)
+      // Try to play video
       video.play().catch(e => {
-        console.log('Video autoplay prevented, will try on user interaction');
-        // Show fallback if autoplay fails
-        video.style.display = 'none';
-        fallback.style.display = 'block';
+        console.log('Video autoplay prevented, video will be paused until user interaction');
+        // Add click handler to start video on user interaction
+        document.addEventListener('click', function startVideoOnClick() {
+          video.play().catch(console.log);
+          document.removeEventListener('click', startVideoOnClick);
+        }, { once: true });
       });
     }
 
-    // Simple initialization without scroll animations
+    // Simple initialization
     document.addEventListener('DOMContentLoaded', function () {
-      // Apply mobile optimizations
-      optimizeForMobile();
-
-      // Apply Intel Mac optimizations
-      optimizeForIntelMac();
-
       // Initialize video background
       initializeVideoBackground();
 
@@ -2381,11 +2173,11 @@ What questions do you have about this bill?`;
       console.log('Civic Compass loaded with', document.querySelectorAll('.bill-frame').length, 'bills');
     });
 
-    // Optimized Search and Filter Functionality
+    // Search and Filter Functionality
     let filterTimeout;
     function filterBills() {
-      // Increased debounce time for Intel Macs
-      const debounceTime = isIntelMac() ? 300 : 150;
+      // Standard debounce time
+      const debounceTime = 150;
       clearTimeout(filterTimeout);
       filterTimeout = setTimeout(() => {
         performFilter();
@@ -2406,8 +2198,8 @@ What questions do you have about this bill?`;
       // Use DocumentFragment for better performance
       const frames = document.querySelectorAll('.bill-frame');
 
-      // Batch DOM updates with optimizations for Intel Macs
-      const batchSize = isIntelMac() ? 10 : 50; // Smaller batches for Intel Macs
+      // Batch DOM updates for better performance
+      const batchSize = 50;
       let currentBatch = 0;
 
       function processBatch() {
@@ -2468,12 +2260,8 @@ What questions do you have about this bill?`;
 
         // Continue processing or finish
         if (currentBatch * batchSize < frames.length) {
-          // Process next batch on next frame for Intel Mac performance
-          if (isIntelMac()) {
-            setTimeout(processBatch, 5);
-          } else {
-            requestAnimationFrame(processBatch);
-          }
+          // Process next batch on next frame
+          requestAnimationFrame(processBatch);
         } else {
           // All done - update UI
           updateResultsCount(visibleCount, totalCount);
