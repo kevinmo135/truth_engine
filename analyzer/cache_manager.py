@@ -118,7 +118,16 @@ class BillAnalysisCache:
         """Clear all cached data"""
         self.cache_data = {}
         self._save_cache()
-        print("��️ Cache cleared")
+        print("🗑️ Cache cleared")
+
+    def clear_stats(self):
+        """Clear cache statistics (reset access counts) while keeping cached analyses"""
+        for bill_key, entry in self.cache_data.items():
+            # Reset access count to 1 (representing just the initial processing)
+            entry["access_count"] = 1
+
+        self._save_cache()
+        print("📊 Cache statistics cleared (access counts reset)")
 
     def cache_bill_analysis(self, bill_id: str, title: str, summary: str,
                             analysis: str, status: str = "active",

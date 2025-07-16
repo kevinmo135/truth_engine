@@ -43,16 +43,20 @@ def summarize_bill(title, summary, sponsor, bill_id=None, status="active"):
         return f"Configuration Error: {str(e)}"
 
     prompt = f"""
-    Analyze this legislation and provide a structured response in the following format:
+    Analyze this legislation and provide a structured response in the following exact format:
 
     **PLAIN ENGLISH SUMMARY:**
     [Write a clear, jargon-free explanation that any citizen can understand]
 
     **BENEFITS:**
-    [List the main advantages and positive outcomes of this legislation]
+    - [First main advantage and positive outcome]
+    - [Second main advantage and positive outcome]  
+    - [Additional benefits as needed]
 
     **DRAWBACKS:**
-    [List the main disadvantages and potential negative consequences]
+    - [First main disadvantage and potential negative consequence]
+    - [Second main disadvantage and potential negative consequence]
+    - [Additional drawbacks as needed]
 
     **SHORT-TERM IMPACT (1-2 years):**
     [Immediate effects if this becomes law]
@@ -65,6 +69,8 @@ def summarize_bill(title, summary, sponsor, bill_id=None, status="active"):
 
     **COST/SAVINGS:**
     [Financial impact - spending, savings, or revenue effects]
+
+    IMPORTANT: For BENEFITS and DRAWBACKS sections, use bullet points with dashes (-), not numbered lists. Each point should be a complete sentence or phrase.
 
     BILL DETAILS:
     Title: {title}

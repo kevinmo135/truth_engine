@@ -170,6 +170,8 @@ if __name__ == "__main__":
                         help="Show cache statistics")
     parser.add_argument("--clear-cache", action="store_true",
                         help="Clear analysis cache")
+    parser.add_argument("--clear-stats", action="store_true",
+                        help="Clear cache statistics (reset access counts)")
     parser.add_argument("--cleanup", action="store_true",
                         help="Clean up old bills (older than 1 month)")
     args = parser.parse_args()
@@ -180,6 +182,10 @@ if __name__ == "__main__":
         cache = get_cache()
         cache.clear_cache()
         print("🗑️ Cache cleared successfully")
+    elif args.clear_stats:
+        cache = get_cache()
+        cache.clear_stats()
+        print("📊 Cache statistics cleared successfully")
     elif args.cleanup:
         cache = get_cache()
         cleaned_count = cache.cleanup_old_bills()
