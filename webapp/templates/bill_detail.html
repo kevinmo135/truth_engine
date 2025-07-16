@@ -29,20 +29,9 @@
       height: 100%;
       z-index: -1;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      animation: gradientShift 10s ease infinite;
     }
 
-    @keyframes gradientShift {
 
-      0%,
-      100% {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      }
-
-      50% {
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-      }
-    }
 
     .header {
       background: rgba(255, 255, 255, 0.1);
@@ -362,8 +351,8 @@
     }
 
     .qa-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+      opacity: 0.9;
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
     }
 
     .qa-button:disabled {
@@ -402,25 +391,7 @@
       color: #667eea;
     }
 
-    .spinner {
-      border: 4px solid #f3f4f6;
-      border-top: 4px solid #667eea;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 1rem;
-    }
 
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
 
     .error {
       background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
@@ -592,7 +563,6 @@
         </form>
 
         <div class="loading" id="loading">
-          <div class="spinner"></div>
           <p>Analyzing your question...</p>
         </div>
 
@@ -633,7 +603,7 @@ What questions do you have about this bill?`;
 
       // Show loading state
       submitButton.disabled = true;
-      submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+      submitButton.innerHTML = 'Analyzing...';
       loading.style.display = 'block';
       responseDiv.innerHTML = '';
 
