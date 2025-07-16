@@ -29,7 +29,7 @@
       position: relative;
     }
 
-    /* Animated Flag Scene Background */
+    /* Video Flag Background */
     .flag-scene {
       position: fixed;
       top: 0;
@@ -41,133 +41,41 @@
       background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 30%, #E0F6FF 60%, #F0F8FF 100%);
     }
 
-    /* Subtle Clouds */
-    .flag-clouds {
+    .flag-video {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      height: 60%;
-      background:
-        radial-gradient(ellipse 80px 30px at 20% 20%, rgba(255, 255, 255, 0.8) 0%, transparent 50%),
-        radial-gradient(ellipse 60px 20px at 80% 30%, rgba(255, 255, 255, 0.6) 0%, transparent 50%),
-        radial-gradient(ellipse 90px 35px at 60% 15%, rgba(255, 255, 255, 0.7) 0%, transparent 50%);
-      animation: cloud-drift 120s linear infinite;
-      will-change: transform;
-    }
-
-    @keyframes cloud-drift {
-      0% {
-        transform: translateX(-20px);
-      }
-
-      100% {
-        transform: translateX(20px);
-      }
-    }
-
-    /* Flagpole */
-    .flagpole {
-      position: absolute;
-      right: 8%;
-      top: 10%;
-      width: 6px;
-      height: 70%;
-      background: linear-gradient(180deg, #8B4513 0%, #A0522D 50%, #8B4513 100%);
-      border-radius: 3px;
-      box-shadow: 2px 0 4px rgba(0, 0, 0, 0.2);
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.8;
       z-index: -2;
     }
 
-    /* Animated American Flag */
-    .animated-flag {
-      position: absolute;
-      right: 8.5%;
-      top: 12%;
-      width: 180px;
-      height: 120px;
-      transform-origin: left center;
-      animation: flag-wave 4s ease-in-out infinite;
-      will-change: transform;
-      z-index: -1;
-    }
-
-    /* Flag Base */
-    .flag-stripes {
-      width: 100%;
-      height: 100%;
-      background: repeating-linear-gradient(0deg,
-          #B22234 0px,
-          #B22234 9.23px,
-          #FFFFFF 9.23px,
-          #FFFFFF 18.46px);
-      position: relative;
-      border-radius: 2px;
-      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    /* Flag Union (Blue Field) */
-    .flag-union {
+    /* Fallback for when video fails to load or is disabled */
+    .flag-video-fallback {
       position: absolute;
       top: 0;
       left: 0;
-      width: 40%;
-      height: 53.8%;
-      background: #002868;
-      background-image:
-        radial-gradient(circle 2px at 8% 11%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 25% 11%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 42% 11%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 58% 11%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 75% 11%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 92% 11%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 16.5% 22%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 33.5% 22%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 50% 22%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 66.5% 22%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 83.5% 22%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 8% 33%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 25% 33%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 42% 33%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 58% 33%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 75% 33%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 92% 33%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 16.5% 44%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 33.5% 44%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 50% 44%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 66.5% 44%, white 50%, transparent 50%),
-        radial-gradient(circle 2px at 83.5% 44%, white 50%, transparent 50%);
-    }
-
-    /* Flag Waving Animation */
-    @keyframes flag-wave {
-
-      0%,
-      100% {
-        transform: perspective(400px) rotateY(0deg) rotateX(0deg);
-      }
-
-      25% {
-        transform: perspective(400px) rotateY(5deg) rotateX(1deg);
-      }
-
-      50% {
-        transform: perspective(400px) rotateY(0deg) rotateX(-1deg);
-      }
-
-      75% {
-        transform: perspective(400px) rotateY(-3deg) rotateX(1deg);
-      }
+      width: 100%;
+      height: 100%;
+      background:
+        linear-gradient(135deg, rgba(30, 144, 255, 0.3) 0%, rgba(70, 130, 180, 0.2) 50%, rgba(255, 255, 255, 0.1) 100%),
+        linear-gradient(180deg, #87CEEB 0%, #B0E0E6 30%, #E0F6FF 60%, #F0F8FF 100%);
+      background-size: cover;
+      z-index: -1;
+      display: none;
+      /* Hidden by default, shown when video fails */
     }
 
     /* Performance optimization for reduced motion */
     @media (prefers-reduced-motion: reduce) {
-      .animated-flag {
-        animation: none;
+      .flag-video {
+        display: none !important;
       }
 
-      .flag-clouds {
-        animation: none;
+      .flag-video-fallback {
+        display: block !important;
       }
     }
 
@@ -214,6 +122,30 @@
       .flag-clouds {
         animation: none;
       }
+    }
+
+    /* Intel Mac specific optimizations - detect via user agent in JS */
+    body.intel-mac .flag-video {
+      opacity: 0.6;
+      /* Reduce video opacity for better performance */
+    }
+
+    body.intel-mac .bill-frame {
+      /* Simplify shadows and effects for Intel Macs */
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    body.intel-mac .content-area {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    /* Disable video entirely on very old Intel Macs for performance */
+    body.old-intel-mac .flag-video {
+      display: none !important;
+    }
+
+    body.old-intel-mac .flag-video-fallback {
+      display: block !important;
     }
 
 
@@ -1705,15 +1637,12 @@
 </head>
 
 <body>
-  <!-- Animated Flag Scene -->
+  <!-- Video Flag Background -->
   <div class="flag-scene">
-    <div class="flag-clouds"></div>
-    <div class="flagpole"></div>
-    <div class="animated-flag">
-      <div class="flag-stripes">
-        <div class="flag-union"></div>
-      </div>
-    </div>
+    <video class="flag-video" autoplay muted loop playsinline id="flagVideo">
+      <source src="/static/videos/Flag_waving.mp4" type="video/mp4">
+    </video>
+    <div class="flag-video-fallback" id="flagFallback"></div>
   </div>
 
   <div class="header">
@@ -2257,6 +2186,38 @@ What questions do you have about this bill?`;
         window.innerWidth <= 768;
     }
 
+    // Intel Mac detection for performance optimization
+    function isIntelMac() {
+      const ua = navigator.userAgent;
+      const platform = navigator.platform;
+
+      // Check if it's a Mac
+      const isMac = /Mac|Macintosh|MacIntel|MacPPC|Mac68K/i.test(platform) ||
+        /Macintosh/i.test(ua);
+
+      if (!isMac) return false;
+
+      // Check for Intel vs Apple Silicon indicators
+      // Intel Macs typically don't have the new M1/M2 identifiers
+      const hasAppleSilicon = /Mac.*ARM|Apple.*Silicon/i.test(ua);
+
+      return isMac && !hasAppleSilicon;
+    }
+
+    function isOldIntelMac() {
+      if (!isIntelMac()) return false;
+
+      // Detect older Intel Macs by checking for older macOS versions or hardware
+      const ua = navigator.userAgent;
+
+      // Check for older macOS versions or performance indicators
+      const hasOldMacOS = /Mac OS X 10_[0-9]_|Mac OS X 10_1[0-5]_/i.test(ua);
+      const lowMemory = navigator.deviceMemory && navigator.deviceMemory <= 4;
+      const lowCores = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2;
+
+      return hasOldMacOS || lowMemory || lowCores;
+    }
+
     function optimizeForMobile() {
       if (isMobileDevice()) {
         // Add mobile-specific class to body
@@ -2306,10 +2267,115 @@ What questions do you have about this bill?`;
       }
     }
 
+    // Intel Mac optimization for performance
+    function optimizeForIntelMac() {
+      if (isOldIntelMac()) {
+        // Very aggressive optimizations for old Intel Macs
+        document.body.classList.add('old-intel-mac');
+
+        // Severely limit DOM elements
+        const currentBillCount = document.querySelectorAll('.bill-frame').length;
+        if (currentBillCount > 20) {
+          const billFrames = document.querySelectorAll('.bill-frame');
+          Array.from(billFrames).slice(20).forEach(frame => {
+            frame.style.display = 'none';
+          });
+
+          updateResultsCount(20, currentBillCount);
+
+          const loadMoreContainer = document.getElementById('loadMoreContainer');
+          if (loadMoreContainer) {
+            loadMoreContainer.style.display = 'block';
+            document.getElementById('loadMoreInfo').textContent = `${currentBillCount - 20} more bills available (optimized for performance)`;
+          }
+        }
+
+        console.log('Old Intel Mac optimizations applied - performance mode');
+
+      } else if (isIntelMac()) {
+        // Moderate optimizations for newer Intel Macs
+        document.body.classList.add('intel-mac');
+
+        // Reduce DOM elements for better scrolling
+        const currentBillCount = document.querySelectorAll('.bill-frame').length;
+        if (currentBillCount > 40) {
+          const billFrames = document.querySelectorAll('.bill-frame');
+          Array.from(billFrames).slice(40).forEach(frame => {
+            frame.style.display = 'none';
+          });
+
+          updateResultsCount(40, currentBillCount);
+
+          const loadMoreContainer = document.getElementById('loadMoreContainer');
+          if (loadMoreContainer) {
+            loadMoreContainer.style.display = 'block';
+            document.getElementById('loadMoreInfo').textContent = `${currentBillCount - 40} more bills available`;
+          }
+        }
+
+        console.log('Intel Mac optimizations applied');
+      }
+    }
+
+    // Video background handling and optimization
+    function initializeVideoBackground() {
+      const video = document.getElementById('flagVideo');
+      const fallback = document.getElementById('flagFallback');
+
+      if (!video) return;
+
+      // Handle video load errors
+      video.addEventListener('error', function () {
+        console.log('Video failed to load, showing fallback background');
+        video.style.display = 'none';
+        fallback.style.display = 'block';
+      });
+
+      // Check for reduced motion preference
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Optimize video settings based on device performance
+      if (prefersReducedMotion || isOldIntelMac()) {
+        // Disable video for reduced motion or very old Intel Macs
+        video.style.display = 'none';
+        fallback.style.display = 'block';
+        console.log('Video disabled for accessibility/performance');
+      } else if (isIntelMac()) {
+        // Reduce video quality/opacity for Intel Macs
+        video.style.opacity = '0.6';
+        // Pause and resume video based on page visibility for battery optimization
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) {
+            video.pause();
+          } else {
+            video.play().catch(e => console.log('Video autoplay prevented'));
+          }
+        });
+        console.log('Video optimized for Intel Mac');
+      }
+
+      // Ensure video is muted for autoplay compliance
+      video.muted = true;
+
+      // Try to play video (required for some browsers)
+      video.play().catch(e => {
+        console.log('Video autoplay prevented, will try on user interaction');
+        // Show fallback if autoplay fails
+        video.style.display = 'none';
+        fallback.style.display = 'block';
+      });
+    }
+
     // Simple initialization without scroll animations
     document.addEventListener('DOMContentLoaded', function () {
       // Apply mobile optimizations
       optimizeForMobile();
+
+      // Apply Intel Mac optimizations
+      optimizeForIntelMac();
+
+      // Initialize video background
+      initializeVideoBackground();
 
       // Just ensure all bills are visible immediately
       console.log('Civic Compass loaded with', document.querySelectorAll('.bill-frame').length, 'bills');
@@ -2318,11 +2384,12 @@ What questions do you have about this bill?`;
     // Optimized Search and Filter Functionality
     let filterTimeout;
     function filterBills() {
-      // Debounce filtering for better performance
+      // Increased debounce time for Intel Macs
+      const debounceTime = isIntelMac() ? 300 : 150;
       clearTimeout(filterTimeout);
       filterTimeout = setTimeout(() => {
         performFilter();
-      }, 150);
+      }, debounceTime);
     }
 
     function performFilter() {
@@ -2339,9 +2406,16 @@ What questions do you have about this bill?`;
       // Use DocumentFragment for better performance
       const frames = document.querySelectorAll('.bill-frame');
 
-      // Batch DOM updates
-      requestAnimationFrame(() => {
-        frames.forEach(frame => {
+      // Batch DOM updates with optimizations for Intel Macs
+      const batchSize = isIntelMac() ? 10 : 50; // Smaller batches for Intel Macs
+      let currentBatch = 0;
+
+      function processBatch() {
+        const start = currentBatch * batchSize;
+        const end = Math.min(start + batchSize, frames.length);
+
+        for (let i = start; i < end; i++) {
+          const frame = frames[i];
           totalCount++;
 
           // Get cached bill data (avoid repeated DOM queries)
@@ -2388,17 +2462,28 @@ What questions do you have about this bill?`;
           } else {
             frame.classList.add('hidden');
           }
-        });
+        }
 
-        // Update results count
-        updateResultsCount(visibleCount, totalCount);
+        currentBatch++;
 
-        // Update section visibility and counts
-        updateSectionVisibility();
+        // Continue processing or finish
+        if (currentBatch * batchSize < frames.length) {
+          // Process next batch on next frame for Intel Mac performance
+          if (isIntelMac()) {
+            setTimeout(processBatch, 5);
+          } else {
+            requestAnimationFrame(processBatch);
+          }
+        } else {
+          // All done - update UI
+          updateResultsCount(visibleCount, totalCount);
+          updateSectionVisibility();
+          updateNoResultsMessage(visibleCount);
+        }
+      }
 
-        // Show/hide no results message
-        updateNoResultsMessage(visibleCount);
-      });
+      // Start processing
+      processBatch();
     }
 
     function updateResultsCount(visible, total) {
