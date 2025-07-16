@@ -333,6 +333,42 @@
       box-shadow: 0 4px 12px rgba(30, 144, 255, 0.3);
     }
 
+    .status-badge {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .status-active {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+    }
+
+    .status-passed {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+
+    .status-failed {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    .status-withdrawn {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+
     .popularity-badge {
       background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
       color: #1e293b;
@@ -1721,8 +1757,8 @@
               <i class="fas fa-filter"></i> Status:
             </label>
             <select id="statusFilter" onchange="filterBills()">
-              <option value="">All Statuses</option>
-              <option value="active" selected>Active</option>
+              <option value="" selected>All Statuses</option>
+              <option value="active">Active</option>
               <option value="passed">Passed</option>
               <option value="failed">Failed</option>
               <option value="withdrawn">Withdrawn</option>
@@ -1812,6 +1848,24 @@
                     <div class="bill-type-badge">
                       <i class="fas fa-flag-usa"></i> Federal
                     </div>
+                    {% set bill_status = bill.status|lower if bill.status else 'active' %}
+                    {% if bill_status in ['passed', 'signed', 'enacted', 'signed into law', 'became law'] %}
+                    <div class="status-badge status-passed">
+                      <i class="fas fa-check-circle"></i> Passed
+                    </div>
+                    {% elif bill_status in ['failed', 'defeated', 'killed', 'died', 'vetoed', 'pocket vetoed'] %}
+                    <div class="status-badge status-failed">
+                      <i class="fas fa-times-circle"></i> Failed
+                    </div>
+                    {% elif bill_status in ['withdrawn', 'suspended'] %}
+                    <div class="status-badge status-withdrawn">
+                      <i class="fas fa-minus-circle"></i> Withdrawn
+                    </div>
+                    {% else %}
+                    <div class="status-badge status-active">
+                      <i class="fas fa-play-circle"></i> Active
+                    </div>
+                    {% endif %}
                     {% if bill._popularity_score %}
                     <div class="popularity-badge" title="Popularity Score: {{ " %.1f"|format(bill._popularity_score)
                       }}">
@@ -1935,6 +1989,24 @@
                     <div class="bill-type-badge">
                       <i class="fas fa-map-marker-alt"></i> State
                     </div>
+                    {% set bill_status = bill.status|lower if bill.status else 'active' %}
+                    {% if bill_status in ['passed', 'signed', 'enacted', 'signed into law', 'became law'] %}
+                    <div class="status-badge status-passed">
+                      <i class="fas fa-check-circle"></i> Passed
+                    </div>
+                    {% elif bill_status in ['failed', 'defeated', 'killed', 'died', 'vetoed', 'pocket vetoed'] %}
+                    <div class="status-badge status-failed">
+                      <i class="fas fa-times-circle"></i> Failed
+                    </div>
+                    {% elif bill_status in ['withdrawn', 'suspended'] %}
+                    <div class="status-badge status-withdrawn">
+                      <i class="fas fa-minus-circle"></i> Withdrawn
+                    </div>
+                    {% else %}
+                    <div class="status-badge status-active">
+                      <i class="fas fa-play-circle"></i> Active
+                    </div>
+                    {% endif %}
                     {% if bill._popularity_score %}
                     <div class="popularity-badge" title="Popularity Score: {{ " %.1f"|format(bill._popularity_score)
                       }}">
@@ -2038,98 +2110,243 @@
 
       <!-- Statistics Tab -->
       <div id="statistics-tab" class="tab-content">
-        <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+        <div style="padding: 2rem; max-width: 1400px; margin: 0 auto;">
 
-          <h2 style="text-align: center; color: #1e293b; margin-bottom: 2rem;">
-            <i class="fas fa-chart-pie"></i> Page Statistics
+          <h2
+            style="text-align: center; color: #1e293b; margin-bottom: 3rem; font-size: 2.5rem; font-family: 'Cinzel', serif;">
+            <i class="fas fa-chart-pie" style="color: #1e90ff;"></i> Legislative Statistics Dashboard
           </h2>
 
-          <!-- Simple Stats Grid -->
-          <div
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+          <!-- Section 1: Overview Statistics -->
+          <div style="margin-bottom: 4rem;">
+            <h3
+              style="color: #1e293b; margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 600; border-bottom: 3px solid #1e90ff; padding-bottom: 0.5rem;">
+              1. Overview Statistics
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;">
 
-            <!-- Bills On This Page -->
-            <div
-              style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;">
-              <div style="font-size: 2rem; color: #1e90ff; margin-bottom: 0.5rem;">
-                <i class="fas fa-scroll"></i>
+              <!-- Bills On This Page -->
+              <div
+                style="background: linear-gradient(135deg, #1e90ff 0%, #3b82f6 100%); color: white; padding: 2rem; border-radius: 15px; box-shadow: 0 8px 25px rgba(30, 144, 255, 0.3); text-align: center;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">
+                  <i class="fas fa-scroll"></i>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">
+                  {{ full_totals.total_bills_on_page }}
+                </div>
+                <div style="font-size: 1rem; opacity: 0.9;">Bills Currently Loaded</div>
               </div>
-              <div style="font-size: 2rem; font-weight: bold; color: #1e293b; margin-bottom: 0.5rem;">
-                {{ full_totals.total_bills_on_page }}
+
+              <!-- Total Bills Ever -->
+              <div
+                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 2rem; border-radius: 15px; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3); text-align: center;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">
+                  <i class="fas fa-archive"></i>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">
+                  {{ comprehensive_stats.total_bills_ever }}
+                </div>
+                <div style="font-size: 1rem; opacity: 0.9;">Total Bills Ever Analyzed</div>
               </div>
-              <div style="color: #6b7280;">Bills On This Page</div>
+
+              <!-- Cache Performance -->
+              <div
+                style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 2rem; border-radius: 15px; box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3); text-align: center;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">
+                  <i class="fas fa-database"></i>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">
+                  {{ comprehensive_stats.cache_size_mb }}MB
+                </div>
+                <div style="font-size: 1rem; opacity: 0.9;">Cache Data Size</div>
+              </div>
+
+              <!-- Success Rate -->
+              <div
+                style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 2rem; border-radius: 15px; box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3); text-align: center;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">
+                  <i class="fas fa-percentage"></i>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">
+                  {% set total_bills = full_totals.total_bills_on_page %}
+                  {% set passed_bills = full_totals.total_passed_federal + full_totals.total_passed_state %}
+                  {% if total_bills > 0 %}
+                  {{ ((passed_bills / total_bills) * 100)|round(1) }}%
+                  {% else %}
+                  0%
+                  {% endif %}
+                </div>
+                <div style="font-size: 1rem; opacity: 0.9;">Legislative Success Rate</div>
+              </div>
+
             </div>
-
-            <!-- Total Bills Ever -->
-            <div
-              style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;">
-              <div style="font-size: 2rem; color: #10b981; margin-bottom: 0.5rem;">
-                <i class="fas fa-archive"></i>
-              </div>
-              <div style="font-size: 2rem; font-weight: bold; color: #1e293b; margin-bottom: 0.5rem;">
-                {{ comprehensive_stats.total_bills_ever }}
-              </div>
-              <div style="color: #6b7280;">Total Bills Ever</div>
-            </div>
-
-            <!-- Bills Passed -->
-            <div
-              style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;">
-              <div style="font-size: 2rem; color: #22c55e; margin-bottom: 0.5rem;">
-                <i class="fas fa-check-circle"></i>
-              </div>
-              <div style="font-size: 2rem; font-weight: bold; color: #1e293b; margin-bottom: 0.5rem;">
-                {{ full_totals.total_passed_federal + full_totals.total_passed_state }}
-              </div>
-              <div style="color: #6b7280;">Bills Passed</div>
-            </div>
-
-            <!-- Bills Failed -->
-            <div
-              style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;">
-              <div style="font-size: 2rem; color: #ef4444; margin-bottom: 0.5rem;">
-                <i class="fas fa-times-circle"></i>
-              </div>
-              <div style="font-size: 2rem; font-weight: bold; color: #1e293b; margin-bottom: 0.5rem;">
-                {{ full_totals.total_failed_federal + full_totals.total_failed_state }}
-              </div>
-              <div style="color: #6b7280;">Bills Failed</div>
-            </div>
-
-            <!-- Currently Active -->
-            <div
-              style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;">
-              <div style="font-size: 2rem; color: #f59e0b; margin-bottom: 0.5rem;">
-                <i class="fas fa-pause-circle"></i>
-              </div>
-              <div style="font-size: 2rem; font-weight: bold; color: #1e293b; margin-bottom: 0.5rem;">
-                {{ full_totals.total_active_federal + full_totals.total_active_state }}
-              </div>
-              <div style="color: #6b7280;">Currently Active</div>
-            </div>
-
-            <!-- Cache Size -->
-            <div
-              style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;">
-              <div style="font-size: 2rem; color: #8b5cf6; margin-bottom: 0.5rem;">
-                <i class="fas fa-hdd"></i>
-              </div>
-              <div style="font-size: 2rem; font-weight: bold; color: #1e293b; margin-bottom: 0.5rem;">
-                {{ comprehensive_stats.cache_size_mb }}MB
-              </div>
-              <div style="color: #6b7280;">Cache Size</div>
-            </div>
-
           </div>
 
-          <!-- Most Popular Bill -->
-          {% if comprehensive_stats.most_accessed_bill %}
-          <div
-            style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;">
-            <h3 style="color: #1e293b; margin-bottom: 1rem;">
-              <i class="fas fa-star" style="color: #fbbf24;"></i> Most Popular Bill
+          <!-- Section 2: Status Breakdown -->
+          <div style="margin-bottom: 4rem;">
+            <h3
+              style="color: #1e293b; margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 600; border-bottom: 3px solid #22c55e; padding-bottom: 0.5rem;">
+              2. Bill Status Distribution
             </h3>
-            <p style="font-size: 1.1rem; color: #4b5563; margin: 0;">{{ comprehensive_stats.most_accessed_bill }}</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem;">
+
+              <!-- Active Bills -->
+              <div
+                style="background: white; padding: 1.8rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; border-left: 5px solid #22c55e;">
+                <div style="font-size: 2rem; color: #22c55e; margin-bottom: 1rem;">
+                  <i class="fas fa-play-circle"></i>
+                </div>
+                <div style="font-size: 2rem; font-weight: bold; color: #1e293b; margin-bottom: 0.5rem;">
+                  {{ full_totals.total_active_federal + full_totals.total_active_state }}
+                </div>
+                <div style="color: #6b7280; font-weight: 500;">Active Bills</div>
+                <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.5rem;">
+                  {{ ((full_totals.total_active_federal + full_totals.total_active_state) /
+                  full_totals.total_bills_on_page * 100)|round(1) if full_totals.total_bills_on_page > 0 else 0 }}% of
+                  total
+                </div>
+              </div>
+
+              <!-- Passed Bills -->
+              <div
+                style="background: white; padding: 1.8rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; border-left: 5px solid #3b82f6;">
+                <div style="font-size: 2rem; color: #3b82f6; margin-bottom: 1rem;">
+                  <i class="fas fa-check-circle"></i>
+                </div>
+                <div style="font-size: 2rem; font-weight: bold; color: #1e293b; margin-bottom: 0.5rem;">
+                  {{ full_totals.total_passed_federal + full_totals.total_passed_state }}
+                </div>
+                <div style="color: #6b7280; font-weight: 500;">Passed Bills</div>
+                <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.5rem;">
+                  {{ ((full_totals.total_passed_federal + full_totals.total_passed_state) /
+                  full_totals.total_bills_on_page * 100)|round(1) if full_totals.total_bills_on_page > 0 else 0 }}% of
+                  total
+                </div>
+              </div>
+
+              <!-- Failed Bills -->
+              <div
+                style="background: white; padding: 1.8rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; border-left: 5px solid #ef4444;">
+                <div style="font-size: 2rem; color: #ef4444; margin-bottom: 1rem;">
+                  <i class="fas fa-times-circle"></i>
+                </div>
+                <div style="font-size: 2rem; font-weight: bold; color: #1e293b; margin-bottom: 0.5rem;">
+                  {{ full_totals.total_failed_federal + full_totals.total_failed_state }}
+                </div>
+                <div style="color: #6b7280; font-weight: 500;">Failed Bills</div>
+                <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.5rem;">
+                  {{ ((full_totals.total_failed_federal + full_totals.total_failed_state) /
+                  full_totals.total_bills_on_page * 100)|round(1) if full_totals.total_bills_on_page > 0 else 0 }}% of
+                  total
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Section 3: Federal vs State Comparison -->
+          <div style="margin-bottom: 4rem;">
+            <h3
+              style="color: #1e293b; margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 600; border-bottom: 3px solid #ef4444; padding-bottom: 0.5rem;">
+              3. Federal vs State Breakdown
+            </h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+
+              <!-- Federal Bills -->
+              <div
+                style="background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 6px 20px rgba(0,0,0,0.1);">
+                <h4
+                  style="color: #1e90ff; margin-bottom: 1.5rem; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
+                  <i class="fas fa-flag-usa"></i> Federal Bills
+                </h4>
+                <div style="space-y: 1rem;">
+                  <div
+                    style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #4b5563; font-weight: 500;">Active:</span>
+                    <span style="font-weight: bold; color: #22c55e;">{{ full_totals.total_active_federal }}</span>
+                  </div>
+                  <div
+                    style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #4b5563; font-weight: 500;">Passed:</span>
+                    <span style="font-weight: bold; color: #3b82f6;">{{ full_totals.total_passed_federal }}</span>
+                  </div>
+                  <div
+                    style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #4b5563; font-weight: 500;">Failed:</span>
+                    <span style="font-weight: bold; color: #ef4444;">{{ full_totals.total_failed_federal }}</span>
+                  </div>
+                  <div
+                    style="display: flex; justify-content: space-between; padding: 0.75rem 0; font-weight: bold; font-size: 1.1rem; border-top: 2px solid #1e90ff; margin-top: 1rem; padding-top: 1rem;">
+                    <span style="color: #1e293b;">Total:</span>
+                    <span style="color: #1e90ff;">{{ full_totals.total_active_federal + full_totals.total_passed_federal
+                      + full_totals.total_failed_federal }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- State Bills -->
+              <div
+                style="background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 6px 20px rgba(0,0,0,0.1);">
+                <h4
+                  style="color: #10b981; margin-bottom: 1.5rem; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
+                  <i class="fas fa-map-marker-alt"></i> State Bills
+                </h4>
+                <div style="space-y: 1rem;">
+                  <div
+                    style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #4b5563; font-weight: 500;">Active:</span>
+                    <span style="font-weight: bold; color: #22c55e;">{{ full_totals.total_active_state }}</span>
+                  </div>
+                  <div
+                    style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #4b5563; font-weight: 500;">Passed:</span>
+                    <span style="font-weight: bold; color: #3b82f6;">{{ full_totals.total_passed_state }}</span>
+                  </div>
+                  <div
+                    style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #4b5563; font-weight: 500;">Failed:</span>
+                    <span style="font-weight: bold; color: #ef4444;">{{ full_totals.total_failed_state }}</span>
+                  </div>
+                  <div
+                    style="display: flex; justify-content: space-between; padding: 0.75rem 0; font-weight: bold; font-size: 1.1rem; border-top: 2px solid #10b981; margin-top: 1rem; padding-top: 1rem;">
+                    <span style="color: #1e293b;">Total:</span>
+                    <span style="color: #10b981;">{{ full_totals.total_active_state + full_totals.total_passed_state +
+                      full_totals.total_failed_state }}</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Section 4: System Performance -->
+          {% if comprehensive_stats.most_accessed_bill %}
+          <div style="margin-bottom: 2rem;">
+            <h3
+              style="color: #1e293b; margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 600; border-bottom: 3px solid #8b5cf6; padding-bottom: 0.5rem;">
+              4. System Performance & Popular Content
+            </h3>
+            <div
+              style="background: white; padding: 2.5rem; border-radius: 15px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); text-align: center;">
+              <h4 style="color: #1e293b; margin-bottom: 1rem; font-size: 1.2rem;">
+                <i class="fas fa-star" style="color: #fbbf24;"></i> Most Popular Bill
+              </h4>
+              <p style="font-size: 1.1rem; color: #4b5563; margin: 0; font-style: italic;">
+                "{{ comprehensive_stats.most_accessed_bill }}"
+              </p>
+              <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 2rem; text-align: center;">
+                <div>
+                  <div style="font-size: 1.5rem; font-weight: bold; color: #8b5cf6;">{{
+                    comprehensive_stats.avg_access_count }}</div>
+                  <div style="font-size: 0.9rem; color: #6b7280;">Avg Views per Bill</div>
+                </div>
+                <div>
+                  <div style="font-size: 1.5rem; font-weight: bold; color: #8b5cf6;">{{
+                    comprehensive_stats.cache_size_mb }}MB</div>
+                  <div style="font-size: 0.9rem; color: #6b7280;">Data Cache Size</div>
+                </div>
+              </div>
+            </div>
           </div>
           {% endif %}
 
@@ -2370,20 +2587,10 @@ What questions do you have about this bill?`;
         // Hide search/filter elements on statistics and analytics pages
         if (searchFilterControls) searchFilterControls.style.display = 'none';
         if (searchKeywordsHelp) searchKeywordsHelp.style.display = 'none';
-        disableInfiniteScroll();
       } else {
         // Show search/filter elements on other pages
         if (searchFilterControls) searchFilterControls.style.display = 'block';
         if (searchKeywordsHelp) searchKeywordsHelp.style.display = 'block';
-
-        // Enable/disable infinite scroll based on tab
-        if (tabName === 'federal' || tabName === 'state') {
-          enableInfiniteScroll();
-          // Update scroll message for new tab
-          updateScrollMessageVisibility();
-        } else {
-          disableInfiniteScroll();
-        }
       }
 
       // Bills are now visible immediately without animations
@@ -2432,69 +2639,16 @@ What questions do you have about this bill?`;
       });
     }
 
-    // Infinite scroll variables
-    let infiniteScrollEnabled = false;
-    let scrollThreshold = 200; // Pixels from bottom to trigger load
+    // All bills loaded at once - no infinite scroll needed
 
-    // Infinite scroll functions
-    function enableInfiniteScroll() {
-      infiniteScrollEnabled = true;
-    }
-
-    function disableInfiniteScroll() {
-      infiniteScrollEnabled = false;
-      hideLoadingIndicator();
-      // Hide scroll message when infinite scroll is disabled
-      const scrollMessage = document.getElementById('scrollMessage');
-      if (scrollMessage) {
-        scrollMessage.style.display = 'none';
-      }
-    }
-
-    function showLoadingIndicator() {
-      const indicator = document.getElementById('infiniteLoadingContainer');
-      if (indicator) {
-        indicator.style.display = 'block';
-      }
-      // Hide scroll message while loading
-      const scrollMessage = document.getElementById('scrollMessage');
-      if (scrollMessage) {
-        scrollMessage.style.display = 'none';
-      }
-    }
-
-    function hideLoadingIndicator() {
-      const indicator = document.getElementById('infiniteLoadingContainer');
-      if (indicator) {
-        indicator.style.display = 'none';
-      }
-      // Update scroll message visibility after loading
-      updateScrollMessageVisibility();
-    }
-
-    function handleScroll() {
-      if (!infiniteScrollEnabled || isLoading) return;
-
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-
-      // Check if user has scrolled close to bottom
-      if (scrollTop + windowHeight >= documentHeight - scrollThreshold) {
-        loadMoreBills();
-      }
-    }
+    // Removed loading indicators and scroll handling - not needed for full bill loading
 
     // Simple initialization
     document.addEventListener('DOMContentLoaded', function () {
       // Initialize video background
       initializeVideoBackground();
 
-      // Enable infinite scroll for default tab (federal-bills)
-      enableInfiniteScroll();
-
-      // Add scroll event listener
-      window.addEventListener('scroll', handleScroll);
+      // All bills are loaded immediately - no scroll handling needed
 
       // Ensure original counts are displayed
       restoreOriginalCounts();
@@ -2560,34 +2714,32 @@ What questions do you have about this bill?`;
 
           // Get cached bill data (avoid repeated DOM queries)
           if (!frame._billData) {
+            const statusBadge = frame.querySelector('.status-badge');
+            const statusText = statusBadge ? statusBadge.textContent.toLowerCase().trim() : 'active';
+
             frame._billData = {
               title: frame.querySelector('.bill-title').textContent.toLowerCase(),
               sponsor: frame.querySelector('.bill-sponsor').textContent.toLowerCase(),
               summary: frame.querySelector('.bill-summary').textContent.toLowerCase(),
               billTypeText: frame.querySelector('.bill-type-badge').textContent.toLowerCase(),
-              billNumber: frame.querySelector('.bill-number').textContent.toLowerCase()
+              billNumber: frame.querySelector('.bill-number').textContent.toLowerCase(),
+              statusText: statusText
             };
           }
 
           const data = frame._billData;
           const billText = data.title + ' ' + data.sponsor + ' ' + data.summary;
 
-          // Determine status from badge or section
+          // Determine status from the new status badge
           let billStatus = 'active';
-          if (data.billTypeText.includes('passed')) {
+          if (data.statusText.includes('passed')) {
             billStatus = 'passed';
-          } else if (data.billTypeText.includes('failed')) {
+          } else if (data.statusText.includes('failed')) {
             billStatus = 'failed';
-          } else if (data.billTypeText.includes('withdrawn')) {
+          } else if (data.statusText.includes('withdrawn')) {
             billStatus = 'withdrawn';
-          } else if (data.billTypeText.includes('vetoed')) {
-            billStatus = 'failed'; // Group vetoed with failed
-          } else if (data.billTypeText.includes('defeated')) {
-            billStatus = 'failed';
-          } else if (data.billTypeText.includes('killed')) {
-            billStatus = 'failed';
-          } else if (data.billTypeText.includes('died')) {
-            billStatus = 'failed';
+          } else if (data.statusText.includes('active')) {
+            billStatus = 'active';
           }
 
           // Determine chamber from bill number or title
@@ -2632,18 +2784,10 @@ What questions do you have about this bill?`;
 
     function updateScrollMessageVisibility() {
       const scrollMessage = document.getElementById('scrollMessage');
-      if (!scrollMessage) return;
-
-      // Show scroll message if:
-      // 1. We're on a bills tab (infinite scroll enabled)
-      // 2. We're not currently loading
-      // 3. There are bills on the page (basic check)
-      // 4. We're NOT on the statistics or analytics tabs
-      const hasBills = document.querySelectorAll('.bill-frame').length > 0;
-      const isNotStatisticsOrAnalyticsTab = currentTab !== 'statistics' && currentTab !== 'analytics';
-      const shouldShow = infiniteScrollEnabled && !isLoading && hasBills && isNotStatisticsOrAnalyticsTab;
-
-      scrollMessage.style.display = shouldShow ? 'flex' : 'none';
+      if (scrollMessage) {
+        // All bills are loaded at once - no scroll message needed
+        scrollMessage.style.display = 'none';
+      }
     }
 
     function updateSectionVisibility() {
@@ -2652,12 +2796,12 @@ What questions do you have about this bill?`;
         const totalBills = section.querySelectorAll('.bill-frame');
         const billCountSpan = section.querySelector('.bill-count');
 
-        // Only update count if we're actively filtering, and NOT during infinite scroll loading
+        // Only update count if we're actively filtering
         const hasActiveFilters = document.getElementById('searchInput').value ||
           document.getElementById('statusFilter').value ||
           document.getElementById('chamberFilter').value;
 
-        if (billCountSpan && hasActiveFilters && !isLoading) {
+        if (billCountSpan && hasActiveFilters) {
           billCountSpan.textContent = `(${visibleBills.length})`;
         }
 
@@ -2744,149 +2888,13 @@ What questions do you have about this bill?`;
         }
       });
 
-      // Initialize pagination
-      initializePagination();
+      // All bills loaded at once - no pagination needed
     });
-
-    // Pagination functionality
-    let isLoading = false;
-    const totalBillsCount = parseInt('{{ total_available_bills }}');
-    let currentOffset = 0;
 
     // Track current tab
     let currentTab = 'federal'; // Default tab
 
-    function initializePagination() {
-      // Set offset to number of bills already shown
-      const initialBillsShown = document.querySelectorAll('.bill-frame').length;
-      currentOffset = initialBillsShown;
-    }
-
-    async function loadMoreBills() {
-      if (isLoading || !infiniteScrollEnabled) return;
-
-      isLoading = true;
-
-      // Show loading indicator
-      showLoadingIndicator();
-
-      try {
-        const response = await fetch(`/api/bills?offset=${currentOffset}&limit=100`);
-        const data = await response.json();
-
-        if (data.bills && data.bills.length > 0) {
-          // Add new bills to the DOM
-          appendBillsToDOM(data.bills);
-
-          // Update offset for next load
-          currentOffset += data.bills.length;
-
-          // Update scroll message
-          updateScrollMessageVisibility();
-
-          // Re-apply current filters to new bills
-          if (document.getElementById('searchInput').value ||
-            document.getElementById('statusFilter').value ||
-            document.getElementById('chamberFilter').value) {
-            performFilter();
-          }
-        } else {
-          // No more bills available - disable infinite scroll for this session
-          disableInfiniteScroll();
-        }
-
-      } catch (error) {
-        console.error('Error loading more bills:', error);
-        // Keep infinite scroll enabled on error so user can try again
-      } finally {
-        isLoading = false;
-        hideLoadingIndicator();
-      }
-    }
-
-    function appendBillsToDOM(bills) {
-      bills.forEach(bill => {
-        const billHtml = createBillHtml(bill);
-
-        // Determine which tab and section to add the bill to
-        const source = bill.source?.toLowerCase() || '';
-        const status = bill.status?.toLowerCase() || '';
-        const isFederal = (source === 'federal' || source.includes('congress'));
-
-        let targetContainer;
-
-        if (isFederal) {
-          // All federal bills go to the same container
-          targetContainer = document.querySelector('#federal-tab .bills-container');
-        } else {
-          // All state bills go to the same container
-          targetContainer = document.querySelector('#state-tab .bills-container');
-        }
-
-        if (targetContainer) {
-          targetContainer.insertAdjacentHTML('beforeend', billHtml);
-        }
-      });
-    }
-
-    function createBillHtml(bill) {
-      const source = bill.source?.toLowerCase() || '';
-      const isFederal = (source === 'federal' || source.includes('congress'));
-      const badgeText = isFederal ? 'Federal' : 'State';
-      const badgeIcon = isFederal ? 'fas fa-flag-usa' : 'fas fa-map-marker-alt';
-
-      let popularityBadge = '';
-      if (bill._popularity_score) {
-        const score = bill._popularity_score;
-        const level = score >= 50 ? 'Hot' : score >= 35 ? 'Popular' : 'Standard';
-        popularityBadge = `
-          <div class="popularity-badge" title="Popularity Score: ${score.toFixed(1)}">
-            <i class="fas fa-star"></i>
-            ${level}
-          </div>
-        `;
-      }
-
-      return `
-        <div class="bill-frame">
-          <div class="bill-header">
-            <div class="bill-badges">
-              <div class="bill-type-badge">
-                <i class="${badgeIcon}"></i> ${badgeText}
-              </div>
-              ${popularityBadge}
-            </div>
-            <div class="bill-number">${bill.bill_number || bill.bill_id || 'N/A'}</div>
-            <h2 class="bill-title">${bill.title}</h2>
-            <p class="bill-sponsor">
-              <i class="fas fa-user-tie"></i>
-              Sponsored by ${bill.sponsor}
-            </p>
-          </div>
-          <div class="bill-content">
-            <div class="bill-summary">
-              ${bill.parsed?.plain_summary || bill.original_summary?.substring(0, 400) + '...' || ''}
-            </div>
-            <div class="action-buttons">
-              <a href="/bill/${bill.bill_id}" class="action-button view-details">
-                <i class="fas fa-microscope"></i>
-                Deep Analysis
-              </a>
-              ${bill.source_url ? `
-                <a href="${bill.source_url}" target="_blank" class="action-button source-link">
-                  <i class="fas fa-external-link-alt"></i>
-                  Official Source
-                </a>
-              ` : ''}
-              <a href="javascript:void(0)" onclick="openChatGPT('${bill.title.replace(/'/g, "\\'")}', '${(bill.original_summary || '').substring(0, 300).replace(/'/g, "\\\'")}')" class="action-button chatgpt-link">
-                <i class="fas fa-robot"></i>
-                Ask AI
-              </a>
-            </div>
-          </div>
-        </div>
-      `;
-    }
+    // All bills loaded at once - no need for dynamic loading functions
 
 
   </script>

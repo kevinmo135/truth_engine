@@ -173,13 +173,13 @@ async def read_root(request: Request, limit: int = 100):
     passed_state = sort_bills_by_popularity(passed_state)
     failed_state = sort_bills_by_popularity(failed_state)
 
-    # Apply initial limit to show first bills
-    initial_active_federal = active_federal[:limit//3]
-    initial_passed_federal = passed_federal[:20]
-    initial_failed_federal = failed_federal[:10]
-    initial_active_state = active_state[:limit//3]
-    initial_passed_state = passed_state[:20]
-    initial_failed_state = failed_state[:10]
+    # Load ALL bills at once - no incremental loading
+    initial_active_federal = active_federal  # Show all active federal bills
+    initial_passed_federal = passed_federal  # Show all passed federal bills
+    initial_failed_federal = failed_federal  # Show all failed federal bills
+    initial_active_state = active_state      # Show all active state bills
+    initial_passed_state = passed_state      # Show all passed state bills
+    initial_failed_state = failed_state      # Show all failed state bills
 
     # Calculate comprehensive statistics from cache for Statistics tab
     comprehensive_stats = calculate_comprehensive_statistics()
