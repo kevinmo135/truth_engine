@@ -46,7 +46,7 @@ class CongressAPI:
             print(f"❌ Congress.gov API request failed: {e}")
             raise
 
-    def get_recent_bills(self, limit: int = 250) -> List[Dict]:
+    def get_recent_bills(self, limit: int = 1000) -> List[Dict]:
         """
         Get recent federal bills from Congress.gov
         """
@@ -301,7 +301,8 @@ def fetch_recent_federal_bills(limit: int = None) -> List[Dict]:
     try:
         api = CongressAPI()
         # Get ALL available bills for comprehensive coverage
-        bills = api.get_recent_bills(limit=limit or 250)  # Get many more bills
+        # Get comprehensive coverage
+        bills = api.get_recent_bills(limit=limit or 1000)
 
         print(f"✅ Successfully fetched {len(bills)} federal bills")
         print(f"📋 Recent Federal Bills:")
