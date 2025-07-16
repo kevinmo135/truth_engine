@@ -13,6 +13,7 @@ class BillAnalysisCache:
     def __init__(self, cache_file: str = "data/processed_bills.json"):
         self.cache_file = cache_file
         self.cache_data = {}
+        self._pending_updates = {}  # Track updates that need to be saved
         self._load_cache()
 
     def _load_cache(self):
@@ -42,15 +43,75 @@ class BillAnalysisCache:
         except Exception as e:
             print(f"⚠️ Error saving cache: {e}")
 
+    def _is_generic_summary(self, summary: str, title: str) -> bool:
+        """
+        Detect if a summary is generic/placeholder text
+        """
+        if not summary or len(summary.strip()) < 10:
+            return True
+
+        summary_lower = summary.lower().strip()
+        title_words = set(title.lower().split())
+
+        # Check for generic patterns
+        generic_patterns = [
+            "federal legislation",
+            "state legislation",
+            "bill hr",
+            "house resolution",
+            "senate bill",
+            "this bill",
+            "to be determined"
+        ]
+
+        for pattern in generic_patterns:
+            if pattern in summary_lower:
+                return True
+
+        # If summary only contains words from title, it's likely generic
+        summary_words = set(summary_lower.split())
+        if len(summary_words - title_words) < 3:
+            return True
+
+        return False
+
     def _generate_bill_key(self, bill_id: str, title: str, summary: str) -> str:
         """
         Generate a unique key for a bill based on its content
-        This helps identify bills even if bill_id changes slightly
+        Uses smart detection to handle generic summaries
         """
-        # Create a hash of the bill content for uniqueness
-        # First 200 chars of summary
-        content = f"{bill_id}|{title}|{summary[:200]}"
+        # If summary is generic, use just bill_id + title for cache key
+        if self._is_generic_summary(summary, title):
+            content = f"{bill_id}|{title}"
+            print(
+                f"🔑 Using simplified cache key for {bill_id} (generic summary detected)")
+        else:
+            # For real summaries, include first 200 chars
+            content = f"{bill_id}|{title}|{summary[:200]}"
+
         return hashlib.md5(content.encode()).hexdigest()
+
+    def _find_existing_bill_entry(self, bill_id: str, title: str) -> Optional[tuple]:
+        """
+        Find existing bill entry that might use old cache key format
+        Returns (key, data) tuple if found
+        """
+        for key, data in self.cache_data.items():
+            cached_bill_id = data.get('bill_id', '')
+            cached_title = data.get('title', '')
+
+            # Match by bill_id and title
+            if cached_bill_id == bill_id and cached_title == title:
+                return (key, data)
+
+        return None
+
+    def flush_cache_updates(self):
+        """Save any pending cache updates to disk"""
+        if self._pending_updates:
+            self._save_cache()
+            self._pending_updates.clear()
+            print(f"💾 Flushed cache updates to disk")
 
     def is_bill_cached(self, bill_id: str, title: str, summary: str) -> bool:
         """Check if a bill has already been processed"""
@@ -61,16 +122,33 @@ class BillAnalysisCache:
         """Retrieve cached analysis for a bill"""
         bill_key = self._generate_bill_key(bill_id, title, summary)
 
+        # Check new cache key format first
         if bill_key in self.cache_data:
             cached_data = self.cache_data[bill_key]
-            # Increment access count for cache hit tracking
+            # Increment access count for cache hit tracking (but don't save immediately)
             cached_data["access_count"] = cached_data.get(
                 "access_count", 1) + 1
             self.cache_data[bill_key] = cached_data
-            # Save cache to persist the updated access count
-            self._save_cache()
+            self._pending_updates[bill_key] = True  # Mark for later save
             print(
                 f"💡 Using cached analysis for {bill_id} (cached on {cached_data.get('cached_date', 'unknown')})")
+            return cached_data
+
+        # Check for existing bill with old cache key format
+        existing_entry = self._find_existing_bill_entry(bill_id, title)
+        if existing_entry:
+            old_key, cached_data = existing_entry
+            print(
+                f"🔄 Migrating bill {bill_id} from old key format to new format")
+
+            # Remove old entry and add with new key
+            del self.cache_data[old_key]
+            cached_data["access_count"] = cached_data.get(
+                "access_count", 1) + 1
+            self.cache_data[bill_key] = cached_data
+            self._pending_updates[bill_key] = True
+
+            print(f"💡 Using migrated cached analysis for {bill_id}")
             return cached_data
 
         return None

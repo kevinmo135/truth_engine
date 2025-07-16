@@ -46,7 +46,7 @@ class CongressAPI:
             print(f"❌ Congress.gov API request failed: {e}")
             raise
 
-    def get_recent_bills(self, limit: int = 250) -> List[Dict]:
+    def get_recent_bills(self, limit: int = 1000) -> List[Dict]:
         """
         Get recent federal bills from Congress.gov
         """
@@ -121,9 +121,13 @@ class CongressAPI:
             formatted_bill_number = self._format_bill_number(
                 bill_type, bill_number)
 
+            # Extract summary with improved logic
+            extracted_summary = self._extract_bill_summary(
+                bill_summary, title, bill_type, bill_number)
+
             return {
                 'title': title,
-                'summary': bill_summary.get('summary', {}).get('text', f"Federal legislation {bill_type.upper()} {bill_number}"),
+                'summary': extracted_summary,
                 'sponsor': sponsor_info,
                 'source_url': source_url,
                 'source': 'federal',
@@ -139,6 +143,31 @@ class CongressAPI:
         except Exception as e:
             print(f"❌ Failed to process bill details: {e}")
             return None
+
+    def _extract_bill_summary(self, bill_summary: Dict, title: str, bill_type: str, bill_number: str) -> str:
+        """
+        Extract bill summary with improved logic to avoid generic summaries
+        """
+        # Try to get the actual summary text
+        summary_obj = bill_summary.get('summary', {})
+        if isinstance(summary_obj, dict):
+            summary_text = summary_obj.get('text', '').strip()
+        else:
+            summary_text = str(summary_obj).strip() if summary_obj else ''
+
+        # If we have a meaningful summary, use it
+        if summary_text and len(summary_text) > 20:
+            # Check if it's not just a generic description
+            if not summary_text.lower().startswith(f"federal legislation {bill_type.lower()}"):
+                return summary_text
+
+        # Fallback: try using the title as a more descriptive summary
+        if title and len(title) > 10:
+            # If title is descriptive enough, use it
+            return title
+
+        # Last resort: generic summary
+        return f"Federal legislation {bill_type.upper()} {bill_number}"
 
     def _extract_sponsor(self, sponsors: List[Dict]) -> str:
         """
@@ -272,7 +301,8 @@ def fetch_recent_federal_bills(limit: int = None) -> List[Dict]:
     try:
         api = CongressAPI()
         # Get ALL available bills for comprehensive coverage
-        bills = api.get_recent_bills(limit=limit or 250)  # Get many more bills
+        # Get comprehensive coverage
+        bills = api.get_recent_bills(limit=limit or 1000)
 
         print(f"✅ Successfully fetched {len(bills)} federal bills")
         print(f"📋 Recent Federal Bills:")
