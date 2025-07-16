@@ -196,9 +196,7 @@ async def read_root(request: Request, limit: int = 100):
         "generated_at": generated_at,
         # Default to active bills shown
         "total_bills": len(initial_active_federal) + len(initial_active_state),
-        # Full count for reference
-        "total_active_federal": len(active_federal),
-        "total_active_state": len(active_state),  # Full count for reference
+
         # All bills for load more
         "total_available_bills": len(active_federal) + len(passed_federal) + len(failed_federal) + len(active_state) + len(passed_state) + len(failed_state),
         "comprehensive_stats": comprehensive_stats,
