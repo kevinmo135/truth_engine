@@ -107,6 +107,15 @@ def sort_bills_by_popularity(bills):
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request, limit: int = 100):
     """Main dashboard showing bills with pagination"""
+
+    # Detect Intel Mac from user agent for server-side optimization
+    user_agent = request.headers.get("user-agent", "").lower()
+    is_intel_mac = ("macintosh" in user_agent or "mac os" in user_agent) and not (
+        "arm" in user_agent or "apple silicon" in user_agent)
+
+    # Reduce initial load for Intel Macs
+    if is_intel_mac:
+        limit = min(limit, 60)  # Cap at 60 bills for Intel Macs
     json_path = "data/latest_digest.json"
 
     if os.path.exists(json_path):
