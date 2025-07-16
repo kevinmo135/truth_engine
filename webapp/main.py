@@ -184,6 +184,18 @@ async def read_root(request: Request, limit: int = 100):
     # Calculate comprehensive statistics from cache for Statistics tab
     comprehensive_stats = calculate_comprehensive_statistics()
 
+    # Calculate full totals for statistics (not just loaded bills)
+    full_totals = {
+        "total_active_federal": len(active_federal),
+        "total_passed_federal": len(passed_federal),
+        "total_failed_federal": len(failed_federal),
+        "total_active_state": len(active_state),
+        "total_passed_state": len(passed_state),
+        "total_failed_state": len(failed_state),
+        "total_bills_on_page": len(active_federal) + len(passed_federal) + len(failed_federal) + len(active_state) + len(passed_state) + len(failed_state),
+        "bills_loaded_so_far": len(initial_active_federal) + len(initial_passed_federal) + len(initial_failed_federal) + len(initial_active_state) + len(initial_passed_state) + len(initial_failed_state)
+    }
+
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "reports": reports,  # Keep for backwards compatibility
@@ -200,6 +212,7 @@ async def read_root(request: Request, limit: int = 100):
         # All bills for load more
         "total_available_bills": len(active_federal) + len(passed_federal) + len(failed_federal) + len(active_state) + len(passed_state) + len(failed_state),
         "comprehensive_stats": comprehensive_stats,
+        "full_totals": full_totals,
         "initial_load": True
     })
 
