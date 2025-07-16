@@ -80,6 +80,10 @@ def generate_and_send_digest():
     print("📝 Creating digest...")
     create_digest(reports)
 
+    # Flush any pending cache updates
+    cache = get_cache()
+    cache.flush_cache_updates()
+
     # Show final cache statistics
     print("\n📊 Final Cache Statistics:")
     final_stats = show_cache_stats()
