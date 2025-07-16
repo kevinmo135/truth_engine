@@ -267,18 +267,4 @@ def generate_analytics_report(bills: List[Dict]) -> Dict:
 
 
 if __name__ == "__main__":
-    # Test with sample data
-    sample_bills = [
-        {
-            'bill_id': 'test1',
-            'title': 'Healthcare Reform Act',
-            'summary': 'A comprehensive healthcare reform bill to improve access to medical care',
-            'sponsor': 'Rep. Jane Smith (D-CA)',
-            'chamber': 'house',
-            'status': 'active',
-            'source': 'federal'
-        }
-    ]
-
-    report = generate_analytics_report(sample_bills)
-    print(json.dumps(report, indent=2))
+    print("Analytics module - use generate_analytics_report() function")

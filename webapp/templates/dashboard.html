@@ -1610,6 +1610,9 @@
         <button class="tab-button" onclick="showTab('state')">
           <i class="fas fa-map-marker-alt"></i> State Bills
         </button>
+        <button class="tab-button" onclick="showTab('statistics')">
+          <i class="fas fa-chart-pie"></i> Statistics
+        </button>
         <a href="/analytics" class="tab-button analytics-link">
           <i class="fas fa-chart-line"></i> Analytics
         </a>
@@ -1635,7 +1638,7 @@
             </label>
             <select id="statusFilter" onchange="filterBills()">
               <option value="">All Statuses</option>
-              <option value="active">Active</option>
+              <option value="active" selected>Active</option>
               <option value="passed">Passed</option>
               <option value="failed">Failed</option>
               <option value="withdrawn">Withdrawn</option>
@@ -1701,13 +1704,16 @@
       <!-- Federal Bills Tab -->
       <div id="federal-tab" class="tab-content active">
 
-        <!-- Federal Bills Section (No Status Grouping) -->
+        <!-- Federal Bills Section -->
         <div class="status-section">
           <div class="section-header active-header" onclick="toggleSection('federal-all')">
             <h3>
               <i class="fas fa-flag-usa"></i>
-              Recent Federal Legislation
-              <span class="bill-count">({{ (active_federal + passed_federal + failed_federal)|length }})</span>
+              Federal Bills
+              <span class="bill-count">
+                ({{ (active_federal + passed_federal + failed_federal)|length }}{% if total_active_federal >
+                active_federal|length %} showing{% endif %})
+              </span>
             </h3>
             <i class="fas fa-chevron-down toggle-icon"></i>
           </div>
@@ -1827,14 +1833,17 @@
           <div class="section-header active-header" onclick="toggleSection('state-active')">
             <h3>
               <i class="fas fa-play-circle"></i>
-              Active State Bills
-              <span class="bill-count">({{ active_state|length }})</span>
+              State Bills
+              <span class="bill-count">
+                ({{ (active_state + passed_state + failed_state)|length }}{% if total_active_state > active_state|length
+                %} showing{% endif %})
+              </span>
             </h3>
             <i class="fas fa-chevron-down toggle-icon"></i>
           </div>
           <div id="state-active" class="section-content active">
             <div class="bills-container">
-              {% for bill in active_state %}
+              {% for bill in active_state + passed_state + failed_state %}
               <div class="bill-frame">
                 <div class="bill-header">
                   <div class="bill-badges">
@@ -1939,87 +1948,99 @@
           </div>
         </div>
 
-        <!-- Recently Passed State Bills Section -->
+
+      </div>
+
+      <!-- Statistics Tab -->
+      <div id="statistics-tab" class="tab-content">
         <div class="status-section">
-          <div class="section-header passed-header collapsed" onclick="toggleSection('state-passed')">
+          <div class="section-header active-header">
             <h3>
-              <i class="fas fa-check-circle"></i>
-              Recently Passed State Bills
-              <span class="bill-count">({{ passed_state|length }})</span>
+              <i class="fas fa-chart-pie"></i>
+              System Statistics
             </h3>
-            <i class="fas fa-chevron-right toggle-icon"></i>
           </div>
-          <div id="state-passed" class="section-content">
-            {% if passed_state %}
-            <div class="bills-container">
-              {% for bill in passed_state %}
-              <div class="bill-frame">
-                <div class="bill-header">
-                  <div class="bill-badges">
-                    <div class="bill-type-badge">
-                      <i class="fas fa-map-marker-alt"></i> State (Passed)
-                    </div>
-                    {% if bill._popularity_score %}
-                    <div class="popularity-badge" title="Popularity Score: {{ " %.1f"|format(bill._popularity_score)
-                      }}">
-                      <i class="fas fa-star"></i>
-                      {% if bill._popularity_score >= 50 %}Hot{% elif bill._popularity_score >= 35 %}Popular{% else
-                      %}Standard{% endif %}
-                    </div>
-                    {% endif %}
-                  </div>
-                  <div class="bill-number">{{ bill.bill_number or bill.bill_id or 'N/A' }}</div>
-                  <h2 class="bill-title">{{ bill.title }}</h2>
-                  <p class="bill-sponsor">
-                    <i class="fas fa-user-tie"></i>
-                    Sponsored by {{ bill.sponsor }}
-                  </p>
-                </div>
-
-                <div class="bill-content">
-                  <div class="bill-summary">
-                    {{ bill.parsed.plain_summary if bill.parsed.plain_summary else bill.original_summary[:400] + '...'
-                    }}
-                  </div>
-
-                  <div class="action-buttons">
-                    <a href="/bill/{{ bill.bill_id }}" class="action-button view-details">
-                      <i class="fas fa-microscope"></i>
-                      Deep Analysis
-                    </a>
-
-                    {% if bill.get('source_url') %}
-                    <a href="{{ bill.source_url }}" target="_blank" class="action-button source-link">
-                      <i class="fas fa-external-link-alt"></i>
-                      Official Source
-                    </a>
-                    {% endif %}
-
-                    <a href="javascript:void(0)"
-                      onclick="openChatGPT('{{ bill.title }}', '{{ bill.original_summary[:300] }}')"
-                      class="action-button chatgpt-link">
-                      <i class="fas fa-robot"></i>
-                      Ask AI
-                    </a>
-                  </div>
-                </div>
+          <div class="section-content active">
+            <!-- Current Session Statistics -->
+            <h4 style="margin-bottom: 1rem; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+              <i class="fas fa-clock"></i> Current Session
+            </h4>
+            <div class="stats">
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-scroll"></i></div>
+                <div class="stat-number">{{ (active_federal + passed_federal + failed_federal + active_state +
+                  passed_state + failed_state)|length }}</div>
+                <div class="stat-label">Bills Loaded</div>
               </div>
-              {% endfor %}
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+                <div class="stat-number">{{ generated_at.split(' ')[0] }}</div>
+                <div class="stat-label">Last Updated</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-number">{{ generated_at.split(' ')[1] if ' ' in generated_at else 'N/A' }}</div>
+                <div class="stat-label">Time Generated</div>
+              </div>
             </div>
-            {% else %}
-            <div class="no-bills">
-              <i class="fas fa-info-circle"></i>
-              <p>No recently passed state bills in the last 30 days.</p>
+
+            <!-- Comprehensive Historical Statistics -->
+            <h4
+              style="margin: 2rem 0 1rem 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+              <i class="fas fa-database"></i> All-Time Statistics
+            </h4>
+            <div class="stats">
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-archive"></i></div>
+                <div class="stat-number">{{ comprehensive_stats.total_bills_ever }}</div>
+                <div class="stat-label">Total Bills Ever</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-number">{{ comprehensive_stats.total_passed }}</div>
+                <div class="stat-label">Bills Passed</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
+                <div class="stat-number">{{ comprehensive_stats.total_failed }}</div>
+                <div class="stat-label">Bills Failed</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-pause-circle"></i></div>
+                <div class="stat-number">{{ comprehensive_stats.total_active }}</div>
+                <div class="stat-label">Currently Active</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-eye"></i></div>
+                <div class="stat-number">{{ comprehensive_stats.avg_access_count }}</div>
+                <div class="stat-label">Avg. Views Per Bill</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-hdd"></i></div>
+                <div class="stat-number">{{ comprehensive_stats.cache_size_mb }}MB</div>
+                <div class="stat-label">Cache Size</div>
+              </div>
+            </div>
+
+            <!-- Most Popular Bill -->
+            {% if comprehensive_stats.most_accessed_bill %}
+            <h4
+              style="margin: 2rem 0 1rem 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+              <i class="fas fa-star"></i> Most Accessed Bill
+            </h4>
+            <div class="popular-bill-card"
+              style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+              <p style="margin: 0; color: #475569; font-weight: 500;">{{ comprehensive_stats.most_accessed_bill }}</p>
             </div>
             {% endif %}
           </div>
         </div>
-
-
       </div>
 
       <!-- Load More Button -->
-      <div class="load-more-container" id="loadMoreContainer">
+      <div class="load-more-container" id="loadMoreContainer" {% if total_available_bills <=(active_federal +
+        passed_federal + failed_federal + active_state + passed_state + failed_state)|length %}style="display: none;" {%
+        endif %}>
         <button class="load-more-button" onclick="loadMoreBills()">
           <i class="fas fa-plus-circle"></i>
           <span id="loadMoreText">Load More Bills</span>
@@ -2028,28 +2049,19 @@
           </span>
         </button>
         <div class="load-more-info">
-          <span id="loadMoreInfo">Click to load the next 100 bills</span>
+          <span id="loadMoreInfo">
+            {% if total_available_bills > (active_federal + passed_federal + failed_federal + active_state +
+            passed_state + failed_state)|length %}
+            {{ total_available_bills - (active_federal + passed_federal + failed_federal + active_state + passed_state +
+            failed_state)|length }} more bills available
+            {% else %}
+            Click to load the next 100 bills
+            {% endif %}
+          </span>
         </div>
       </div>
 
-      <!-- Statistics moved to bottom -->
-      <div class="stats">
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-scroll"></i></div>
-          <div class="stat-number">{{ total_bills }}</div>
-          <div class="stat-label">Bills Analyzed</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
-          <div class="stat-number">{{ generated_at.split(' ')[0] }}</div>
-          <div class="stat-label">Last Updated</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-clock"></i></div>
-          <div class="stat-number">{{ generated_at.split(' ')[1] if ' ' in generated_at else 'N/A' }}</div>
-          <div class="stat-label">Time Generated</div>
-        </div>
-      </div>
+
     </div>
   </div>
 
@@ -2232,6 +2244,14 @@ What questions do you have about this bill?`;
             billStatus = 'failed';
           } else if (data.billTypeText.includes('withdrawn')) {
             billStatus = 'withdrawn';
+          } else if (data.billTypeText.includes('vetoed')) {
+            billStatus = 'failed'; // Group vetoed with failed
+          } else if (data.billTypeText.includes('defeated')) {
+            billStatus = 'failed';
+          } else if (data.billTypeText.includes('killed')) {
+            billStatus = 'failed';
+          } else if (data.billTypeText.includes('died')) {
+            billStatus = 'failed';
           }
 
           // Determine chamber from bill number or title
@@ -2345,6 +2365,10 @@ What questions do you have about this bill?`;
       const totalBills = document.querySelectorAll('.bill-frame').length;
       document.getElementById('resultsCount').textContent = `Showing all ${totalBills} bills`;
 
+      // Apply active filter by default
+      document.getElementById('statusFilter').value = 'active';
+      filterBills(); // Apply the filter immediately
+
       // Add keyboard shortcut for search (Ctrl+F or Cmd+F)
       document.addEventListener('keydown', function (e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
@@ -2359,7 +2383,7 @@ What questions do you have about this bill?`;
 
     // Pagination functionality
     let isLoading = false;
-    const totalBillsCount = parseInt('{{ total_bills }}');
+    const totalBillsCount = parseInt('{{ total_available_bills }}');
     let currentOffset = 0;
 
     function initializePagination() {
@@ -2428,7 +2452,7 @@ What questions do you have about this bill?`;
       bills.forEach(bill => {
         const billHtml = createBillHtml(bill);
 
-        // Determine which section to add the bill to
+        // Determine which tab and section to add the bill to
         const source = bill.source?.toLowerCase() || '';
         const status = bill.status?.toLowerCase() || '';
         const isFederal = (source === 'federal' || source.includes('congress'));
@@ -2436,19 +2460,11 @@ What questions do you have about this bill?`;
         let targetContainer;
 
         if (isFederal) {
-          if (status.includes('passed') || status.includes('signed') || status.includes('enacted')) {
-            targetContainer = document.querySelector('#federal-tab .bills-container');
-          } else if (status.includes('failed') || status.includes('defeated')) {
-            targetContainer = document.querySelector('#federal-tab .bills-container');
-          } else {
-            targetContainer = document.querySelector('#federal-tab .bills-container');
-          }
+          // All federal bills go to the same container
+          targetContainer = document.querySelector('#federal-tab .bills-container');
         } else {
-          if (status.includes('passed') || status.includes('signed') || status.includes('enacted')) {
-            targetContainer = document.querySelector('#state-tab .bills-container');
-          } else {
-            targetContainer = document.querySelector('#state-tab .bills-container');
-          }
+          // All state bills go to the same container
+          targetContainer = document.querySelector('#state-tab .bills-container');
         }
 
         if (targetContainer) {

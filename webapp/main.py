@@ -127,7 +127,7 @@ async def read_root(request: Request, limit: int = 100):
         reports = []
         generated_at = "No data available"
 
-    # Filter bills by status and source
+    # Filter bills by status and source - SHOW ALL BILLS
     active_federal = []
     passed_federal = []
     failed_federal = []
@@ -143,13 +143,19 @@ async def read_root(request: Request, limit: int = 100):
         is_federal = (source == 'federal' or 'congress' in source)
 
         # Categorize by status
-        if status in ['passed', 'signed', 'enacted']:
+        if status in ['passed', 'signed', 'enacted', 'signed into law', 'became law']:
             if is_federal:
                 passed_federal.append(bill)
             else:
                 passed_state.append(bill)
-        elif status in ['failed', 'defeated', 'killed', 'died', 'vetoed']:
+        elif status in ['failed', 'defeated', 'killed', 'died', 'vetoed', 'pocket vetoed']:
             if is_federal:
+                failed_federal.append(bill)
+            else:
+                failed_state.append(bill)
+        elif status in ['withdrawn', 'suspended']:
+            if is_federal:
+                # Group withdrawn with failed for simplicity
                 failed_federal.append(bill)
             else:
                 failed_state.append(bill)
@@ -159,7 +165,7 @@ async def read_root(request: Request, limit: int = 100):
             else:
                 active_state.append(bill)
 
-    # Sort all bill categories by popularity (most popular first)
+    # Sort bill categories by popularity (most popular first)
     active_federal = sort_bills_by_popularity(active_federal)
     passed_federal = sort_bills_by_popularity(passed_federal)
     failed_federal = sort_bills_by_popularity(failed_federal)
@@ -167,24 +173,35 @@ async def read_root(request: Request, limit: int = 100):
     passed_state = sort_bills_by_popularity(passed_state)
     failed_state = sort_bills_by_popularity(failed_state)
 
-    # Apply initial limit to show first 100 bills total
-    # Show up to 50 federal bills initially
-    initial_federal = active_federal[:limit//2]
-    # Show up to 50 state bills initially
-    initial_state = active_state[:limit//2]
+    # Apply initial limit to show first bills
+    initial_active_federal = active_federal[:limit//3]
+    initial_passed_federal = passed_federal[:20]
+    initial_failed_federal = failed_federal[:10]
+    initial_active_state = active_state[:limit//3]
+    initial_passed_state = passed_state[:20]
+    initial_failed_state = failed_state[:10]
+
+    # Calculate comprehensive statistics from cache for Statistics tab
+    comprehensive_stats = calculate_comprehensive_statistics()
 
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "reports": reports,  # Keep for backwards compatibility
-        "active_federal": initial_federal,
-        # Show fewer passed/failed initially
-        "passed_federal": passed_federal[:20],
-        "failed_federal": failed_federal[:10],
-        "active_state": initial_state,
-        "passed_state": passed_state[:20],
-        "failed_state": failed_state[:10],
+        "active_federal": initial_active_federal,
+        "passed_federal": initial_passed_federal,
+        "failed_federal": initial_failed_federal,
+        "active_state": initial_active_state,
+        "passed_state": initial_passed_state,
+        "failed_state": initial_failed_state,
         "generated_at": generated_at,
-        "total_bills": len(reports),
+        # Default to active bills shown
+        "total_bills": len(initial_active_federal) + len(initial_active_state),
+        # Full count for reference
+        "total_active_federal": len(active_federal),
+        "total_active_state": len(active_state),  # Full count for reference
+        # All bills for load more
+        "total_available_bills": len(active_federal) + len(passed_federal) + len(failed_federal) + len(active_state) + len(passed_state) + len(failed_state),
+        "comprehensive_stats": comprehensive_stats,
         "initial_load": True
     })
 
@@ -266,17 +283,55 @@ async def ask_question(bill_id: str, question: str = Form(...)):
 
 @app.get("/analytics", response_class=HTMLResponse)
 async def analytics_dashboard(request: Request):
-    """Analytics dashboard showing trends and insights"""
-    json_path = "data/latest_digest.json"
+    """Analytics dashboard showing comprehensive trends and insights"""
+    # Use comprehensive historical data from processed bills cache
+    cache_path = "data/processed_bills.json"
+    latest_path = "data/latest_digest.json"
 
-    if os.path.exists(json_path):
-        with open(json_path, "r") as f:
-            data = json.load(f)
-        reports = data.get('reports', [])
-        generated_at = data.get('generated_at', 'Unknown')
+    all_bills = []
+    generated_at = "Unknown"
 
-        # Generate analytics report
-        analytics_data = generate_analytics_report(reports)
+    # Load comprehensive historical data from cache
+    if os.path.exists(cache_path):
+        with open(cache_path, "r") as f:
+            cache_data = json.load(f)
+
+        # Convert cache format to reports format for analytics
+        for bill_key, bill_data in cache_data.items():
+            if isinstance(bill_data, dict) and 'analysis' in bill_data:
+                # Parse the analysis to get structured data like the digest format
+                from writer.report_generator import parse_gpt4_analysis
+                parsed_analysis = parse_gpt4_analysis(
+                    bill_data.get('analysis', ''))
+
+                bill_report = {
+                    "title": bill_data.get('title', ''),
+                    "sponsor": "Unknown",  # Not available in cache
+                    "original_summary": bill_data.get('summary', ''),
+                    "analysis": bill_data.get('analysis', ''),
+                    "parsed": parsed_analysis,
+                    "bill_id": bill_data.get('bill_id', bill_key),
+                    "bill_number": bill_data.get('bill_id', bill_key),
+                    "source_url": None,
+                    "source": "historical",
+                    "state": "Unknown",
+                    "chamber": "Unknown",
+                    "session": "Unknown",
+                    "status": bill_data.get('status', 'Unknown'),
+                    "cached_date": bill_data.get('cached_date'),
+                    "access_count": bill_data.get('access_count', 0)
+                }
+                all_bills.append(bill_report)
+
+    # Get timestamp from latest digest if available
+    if os.path.exists(latest_path):
+        with open(latest_path, "r") as f:
+            latest_data = json.load(f)
+        generated_at = latest_data.get('generated_at', 'Unknown')
+
+    if all_bills:
+        # Generate analytics report with comprehensive data
+        analytics_data = generate_analytics_report(all_bills)
 
         return templates.TemplateResponse("analytics.html", {
             "request": request,
@@ -301,7 +356,7 @@ async def get_bills_api(offset: int = 0, limit: int = 100):
 
         reports = data.get('reports', [])
 
-        # Filter bills by status and source
+        # Filter bills by status and source - SHOW ALL BILLS
         active_federal = []
         passed_federal = []
         failed_federal = []
@@ -317,13 +372,19 @@ async def get_bills_api(offset: int = 0, limit: int = 100):
             is_federal = (source == 'federal' or 'congress' in source)
 
             # Categorize by status
-            if status in ['passed', 'signed', 'enacted']:
+            if status in ['passed', 'signed', 'enacted', 'signed into law', 'became law']:
                 if is_federal:
                     passed_federal.append(bill)
                 else:
                     passed_state.append(bill)
-            elif status in ['failed', 'defeated', 'killed', 'died', 'vetoed']:
+            elif status in ['failed', 'defeated', 'killed', 'died', 'vetoed', 'pocket vetoed']:
                 if is_federal:
+                    failed_federal.append(bill)
+                else:
+                    failed_state.append(bill)
+            elif status in ['withdrawn', 'suspended']:
+                if is_federal:
+                    # Group withdrawn with failed for simplicity
                     failed_federal.append(bill)
                 else:
                     failed_state.append(bill)
@@ -333,7 +394,7 @@ async def get_bills_api(offset: int = 0, limit: int = 100):
                 else:
                     active_state.append(bill)
 
-        # Sort all bill categories by popularity (most popular first)
+        # Sort bill categories by popularity (most popular first)
         active_federal = sort_bills_by_popularity(active_federal)
         passed_federal = sort_bills_by_popularity(passed_federal)
         failed_federal = sort_bills_by_popularity(failed_federal)
@@ -371,6 +432,69 @@ async def get_bills_api(offset: int = 0, limit: int = 100):
             },
             "generated_at": "No data available"
         }
+
+
+def calculate_comprehensive_statistics():
+    """Calculate comprehensive statistics from the full processed bills cache"""
+    cache_path = "data/processed_bills.json"
+    stats = {
+        'total_bills_ever': 0,
+        'total_active': 0,
+        'total_passed': 0,
+        'total_failed': 0,
+        'total_withdrawn': 0,
+        'most_accessed_bill': '',
+        'cache_size_mb': 0,
+        'avg_access_count': 0
+    }
+
+    if not os.path.exists(cache_path):
+        return stats
+
+    try:
+        with open(cache_path, "r") as f:
+            cache_data = json.load(f)
+
+        # Calculate file size
+        stats['cache_size_mb'] = round(
+            os.path.getsize(cache_path) / (1024 * 1024), 1)
+
+        total_access_count = 0
+        max_access_count = 0
+        most_accessed_title = ""
+
+        for bill_key, bill_data in cache_data.items():
+            if isinstance(bill_data, dict):
+                stats['total_bills_ever'] += 1
+
+                # Count by status
+                status = bill_data.get('status', '').lower()
+                if status in ['active', 'introduced', 'pending']:
+                    stats['total_active'] += 1
+                elif status in ['passed', 'signed', 'enacted']:
+                    stats['total_passed'] += 1
+                elif status in ['failed', 'rejected', 'defeated']:
+                    stats['total_failed'] += 1
+                elif status in ['withdrawn', 'suspended']:
+                    stats['total_withdrawn'] += 1
+
+                # Track access counts
+                access_count = bill_data.get('access_count', 0)
+                total_access_count += access_count
+
+                if access_count > max_access_count:
+                    max_access_count = access_count
+                    most_accessed_title = bill_data.get(
+                        'title', 'Unknown')[:50] + "..."
+
+        stats['most_accessed_bill'] = most_accessed_title
+        stats['avg_access_count'] = round(
+            total_access_count / max(stats['total_bills_ever'], 1), 1)
+
+    except Exception as e:
+        print(f"Error calculating comprehensive statistics: {e}")
+
+    return stats
 
 
 @app.get("/health")
