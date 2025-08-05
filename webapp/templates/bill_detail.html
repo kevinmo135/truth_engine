@@ -291,6 +291,36 @@
       color: #dc2626;
     }
 
+    .impact-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .impact-list li {
+      position: relative;
+      padding-left: 1.5rem;
+      margin-bottom: 0.75rem;
+      line-height: 1.6;
+    }
+
+    .impact-helps .impact-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: #059669;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .impact-hurts .impact-list li::before {
+      content: '⚠';
+      position: absolute;
+      left: 0;
+      color: #dc2626;
+      font-size: 1.1rem;
+    }
+
     .qa-section {
       background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
       border-radius: 16px;
@@ -492,14 +522,22 @@
         {% if bill.parsed.benefits %}
         <div class="impact-card impact-helps">
           <h3><i class="fas fa-thumbs-up"></i> Benefits</h3>
-          <p>{{ bill.parsed.benefits }}</p>
+          <ul class="impact-list">
+            {% for point in bill.parsed.benefits.split('.') if point.strip() %}
+            <li>{{ point.strip() }}</li>
+            {% endfor %}
+          </ul>
         </div>
         {% endif %}
 
         {% if bill.parsed.drawbacks %}
         <div class="impact-card impact-hurts">
           <h3><i class="fas fa-exclamation-triangle"></i> Drawbacks</h3>
-          <p>{{ bill.parsed.drawbacks }}</p>
+          <ul class="impact-list">
+            {% for point in bill.parsed.drawbacks.split('.') if point.strip() %}
+            <li>{{ point.strip() }}</li>
+            {% endfor %}
+          </ul>
         </div>
         {% endif %}
       </div>
